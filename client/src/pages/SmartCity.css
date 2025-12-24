@@ -1,0 +1,564 @@
+/* Smart City Page Styles */
+.smart-city-page {
+  width: 100%;
+}
+
+/* Hero Section */
+.smart-city-hero-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 80px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.smart-city-hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,165.3C1248,171,1344,149,1392,138.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+  background-size: cover;
+  opacity: 0.5;
+}
+
+.smart-city-hero-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.smart-city-hero-title {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  letter-spacing: 1px;
+}
+
+.smart-city-hero-subtitle {
+  font-size: 1.3rem;
+  font-weight: 300;
+  opacity: 0.95;
+}
+
+/* Introduction Section */
+.smart-city-intro-section {
+  padding: 80px 20px;
+  background-color: white;
+}
+
+.smart-city-intro-section .section-description {
+  text-align: justify;
+}
+
+/* Projects Section */
+.projects-section {
+  padding: 80px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 40px;
+  margin-top: 50px;
+}
+
+.project-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  border: 2px solid transparent;
+  overflow: hidden;
+}
+
+.project-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+  border-color: #667eea;
+}
+
+.project-card.featured {
+  border: 3px solid #667eea;
+}
+
+.project-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px 25px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  z-index: 2;
+}
+
+.project-image {
+  position: relative;
+  height: 300px;
+  overflow: hidden;
+}
+
+.project-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.project-card:hover .project-image img {
+  transform: scale(1.1);
+}
+
+.project-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.3) 100%);
+}
+
+.project-content {
+  padding: 40px;
+}
+
+.project-card h3 {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.project-size,
+.project-location {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+.project-description {
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+
+.project-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.smart-city-page .feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.smart-city-page .feature-icon {
+  font-size: 1.5rem;
+}
+
+.project-highlights {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.project-highlights li {
+  padding: 12px 0;
+  color: #555;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.project-highlights li:last-child {
+  border-bottom: none;
+}
+
+/* Specialty Section */
+.specialty-section {
+  padding: 80px 20px;
+  background-color: white;
+}
+
+.specialty-content {
+  margin-top: 40px;
+}
+
+.specialty-main {
+  max-width: 900px;
+  margin: 0 auto 50px;
+  text-align: center;
+}
+
+.specialty-main p {
+  font-size: 1.1rem;
+  color: #555;
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+.specialty-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+}
+
+.specialty-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 2px solid #f0f0f0;
+  overflow: hidden;
+}
+
+.specialty-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
+}
+
+.specialty-image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.specialty-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.specialty-card:hover .specialty-image img {
+  transform: scale(1.1);
+}
+
+.specialty-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent 0%, rgba(102, 126, 234, 0.3) 100%);
+}
+
+.specialty-card h3 {
+  font-size: 1.4rem;
+  color: #333;
+  margin: 25px 30px 15px;
+  font-weight: bold;
+}
+
+.specialty-card p {
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.7;
+  margin: 0 30px 30px;
+}
+
+/* Benefits Section */
+.smart-city-page .benefits-section {
+  padding: 80px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.smart-city-page .benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 30px;
+  margin-top: 50px;
+}
+
+.smart-city-page .benefit-card {
+  background: white;
+  padding: 35px 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border-left: 4px solid #667eea;
+  position: relative;
+  overflow: hidden;
+}
+
+.smart-city-page .benefit-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: height 0.3s ease;
+}
+
+.smart-city-page .benefit-card:hover::before {
+  height: 100%;
+}
+
+.smart-city-page .benefit-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 28px rgba(102, 126, 234, 0.2);
+  border-left-color: #764ba2;
+}
+
+.smart-city-page .benefit-number {
+  display: inline-block;
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 10px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+}
+
+.smart-city-page .benefit-card h3 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.smart-city-page .benefit-card p {
+  font-size: 1rem;
+  color: #666;
+  line-height: 1.8;
+}
+
+/* Features Section */
+.features-section {
+  padding: 80px 20px;
+  background-color: white;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 30px;
+  margin-top: 50px;
+}
+
+.feature-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 40px 35px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  transition: all 0.5s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+}
+
+.feature-card:hover::before {
+  transform: translate(-25%, -25%);
+}
+
+.feature-number {
+  font-size: 3rem;
+  font-weight: bold;
+  opacity: 0.3;
+  margin-bottom: 15px;
+  position: relative;
+  z-index: 1;
+}
+
+.feature-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+  position: relative;
+  z-index: 1;
+}
+
+.feature-card p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  opacity: 0.95;
+  position: relative;
+  z-index: 1;
+}
+
+/* CTA Section */
+.smart-city-cta-section {
+  padding: 80px 20px;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  color: white;
+  text-align: center;
+}
+
+.smart-city-cta-section h2 {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.smart-city-cta-section p {
+  font-size: 1.2rem;
+  margin-bottom: 40px;
+  opacity: 0.95;
+}
+
+.smart-city-page .cta-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.smart-city-page .btn-primary,
+.smart-city-page .btn-secondary {
+  padding: 15px 40px;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.smart-city-page .btn-primary {
+  background: white;
+  color: #2c3e50;
+}
+
+.smart-city-page .btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.3);
+}
+
+.smart-city-page .btn-secondary {
+  background: transparent;
+  color: white;
+  border: 2px solid white;
+}
+
+.smart-city-page .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-3px);
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  .smart-city-hero-title {
+    font-size: 2.2rem;
+  }
+
+  .smart-city-hero-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-image {
+    height: 250px;
+  }
+
+  .project-content {
+    padding: 30px 25px;
+  }
+
+  .project-features {
+    grid-template-columns: 1fr;
+  }
+
+  .specialty-grid,
+  .smart-city-page .benefits-grid,
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .specialty-image {
+    height: 180px;
+  }
+
+  .smart-city-page .benefit-card {
+    padding: 30px 25px;
+  }
+
+  .smart-city-page .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .smart-city-page .btn-primary,
+  .smart-city-page .btn-secondary {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .smart-city-hero-title {
+    font-size: 1.8rem;
+  }
+
+  .project-image {
+    height: 200px;
+  }
+
+  .specialty-image {
+    height: 150px;
+  }
+
+  .smart-city-page .benefit-number {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+
+  .smart-city-page .benefit-card h3 {
+    font-size: 1.3rem;
+  }
+
+  .smart-city-page .benefit-card p {
+    font-size: 0.95rem;
+  }
+
+  .feature-number {
+    font-size: 2.5rem;
+  }
+}
