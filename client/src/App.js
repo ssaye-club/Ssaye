@@ -11,6 +11,8 @@ import Farms from './pages/Farms';
 import Blog from './pages/Blog';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Portfolio from './pages/Portfolio';
+import Investments from './pages/Investments';
 import './App.css';
 
 function App() {
@@ -29,6 +31,8 @@ function App() {
               <Route path="/blog" element={<Blog />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/portfolio" element={<Portfolio />} />
+              <Route path="/investments" element={<Investments />} />
             </Routes>
           </main>
           <Footer />

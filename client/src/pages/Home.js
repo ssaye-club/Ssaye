@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import techCity from '../images/tech-city.avif';
 import './Home.css';
 
 function Home() {
+  const { isAuthenticated } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [contactForm, setContactForm] = useState({
     name: '',
@@ -63,7 +65,11 @@ function Home() {
           <p className="hero-subtitle">Empowering communities for sustainable and smart living</p>
           <p className="hero-intro">SSAYE Club provides an advanced digital marketplace for individuals, communities, suppliers and developers to make smart decisions on assets and energy, secured transactions and adopt sustainable practices in the interest of smart economy.</p>
           <div className="hero-buttons">
-            <button className="btn-hero-primary">Get Started</button>
+            {isAuthenticated() ? (
+              <Link to="/portfolio" className="btn-hero-primary">My Portfolio</Link>
+            ) : (
+              <Link to="/signup" className="btn-hero-primary">Get Started</Link>
+            )}
             <button className="btn-hero-secondary" onClick={scrollToContact}>Contact Us</button>
           </div>
         </div>

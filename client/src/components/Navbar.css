@@ -128,7 +128,9 @@
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   letter-spacing: 0.5px;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-join:hover {
@@ -228,6 +230,11 @@
   color: #333;
   font-size: 14px;
   font-weight: 500;
+  display: block;
+}
+
+.dropdown-link {
+  text-decoration: none;
 }
 
 .dropdown-item:hover {

@@ -107,6 +107,17 @@ function Navbar() {
               Blog
             </Link>
           </li>
+          {isAuthenticated() && (
+            <li className="navbar-item">
+              <Link 
+                to="/portfolio" 
+                className={`navbar-link ${isActive('/portfolio') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Portfolio
+              </Link>
+            </li>
+          )}
           {isAuthenticated() ? (
             <li className="navbar-item navbar-user">
               <div className="user-menu-container">
@@ -120,6 +131,13 @@ function Navbar() {
                       <p className="user-info-name">{user?.name}</p>
                       <p className="user-info-email">{user?.email}</p>
                     </div>
+                    <Link 
+                      to="/portfolio" 
+                      className="dropdown-item dropdown-link"
+                      onClick={() => { setUserMenuOpen(false); closeMobileMenu(); }}
+                    >
+                      My Portfolio
+                    </Link>
                     <button className="dropdown-item" onClick={handleLogout}>
                       Logout
                     </button>
