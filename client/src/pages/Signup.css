@@ -164,6 +164,12 @@
   .signup-card h1 {
     font-size: 26px;
   }
+
+  .signup-container {
+    align-items: flex-start;
+    min-height: 0;
+    padding: 60px 20px;
+  }
 }
 
 @media (max-width: 480px) {
