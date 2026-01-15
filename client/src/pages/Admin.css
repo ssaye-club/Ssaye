@@ -533,11 +533,11 @@
     padding: 1.25rem;
   }
 
-  .stat-value {
+  .admin-stat-card .stat-value {
     font-size: 2rem;
   }
 
-  .stat-label {
+  .admin-stat-card .stat-label {
     font-size: 0.875rem;
   }
 

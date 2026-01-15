@@ -200,11 +200,6 @@ function Portfolio() {
     }
   }, [isAuthenticated]);
 
-  // Scroll to top when changing tabs
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeTab]);
-
   useEffect(() => {
     // Animate numbers when portfolio data loads
     if (!loadingPortfolio && portfolioData.overview.currentValue > 0) {
@@ -734,7 +729,7 @@ function Portfolio() {
                     />
                   </div>
                 </div>
-                <div className="transactions-table">
+                <div className="transactions-list">
                   {getFilteredTransactions().length === 0 ? (
                     <div className="empty-state">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -748,33 +743,33 @@ function Portfolio() {
                   ) : (
                     <>
                       {getFilteredTransactions().map((transaction) => (
-                    <div key={transaction.id} className="transaction-row">
-                      <div className="transaction-details">
-                        <div className={`transaction-type-icon ${transaction.type.toLowerCase()}`}>
-                          {transaction.type === 'Investment' ? (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M12 5v14M5 12l7-7 7 7" />
-                            </svg>
-                          ) : (
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M12 19V5M5 12l7 7 7-7" />
-                            </svg>
-                          )}
+                        <div key={transaction.id} className="transaction-item">
+                          <div className="transaction-info">
+                            <div className={`transaction-icon ${transaction.type.toLowerCase()}`}>
+                              {transaction.type === 'Investment' ? (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M12 5v14M5 12l7-7 7 7" />
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M12 19V5M5 12l7 7 7-7" />
+                                </svg>
+                              )}
+                            </div>
+                            <div>
+                              <p className="transaction-name">{transaction.asset}</p>
+                              <p className="transaction-date">{formatDate(transaction.date)}</p>
+                            </div>
+                          </div>
+                          <div className="transaction-amount">
+                            <p className={`amount ${transaction.type.toLowerCase()}`}>
+                              {transaction.type === 'Investment' ? '-' : '+'}{formatCurrency(transaction.amount)}
+                            </p>
+                            <span className={`status-badge ${transaction.status.toLowerCase()}`}>
+                              {transaction.status}
+                            </span>
+                          </div>
                         </div>
-                        <div className="transaction-text">
-                          <p className="transaction-title">{transaction.type} - {transaction.asset}</p>
-                          <p className="transaction-meta">{formatDate(transaction.date)}</p>
-                        </div>
-                      </div>
-                      <div className="transaction-value">
-                        <p className={`transaction-price ${transaction.type.toLowerCase()}`}>
-                          {transaction.type === 'Investment' ? '-' : '+'}{formatCurrency(transaction.amount)}
-                        </p>
-                        <span className={`transaction-status ${transaction.status.toLowerCase()}`}>
-                          {transaction.status}
-                        </span>
-                      </div>
-                    </div>
                       ))}
                     </>
                   )}

@@ -70,7 +70,10 @@ function Navbar() {
                   className={`navbar-link ${isActive('/') ? 'active' : ''}`}
                   onClick={closeMobileMenu}
                 >
-                  Home
+                  <span>Home</span>
+                  <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
                 </Link>
               </li>
               <li className="navbar-item">
@@ -79,7 +82,10 @@ function Navbar() {
                   className={`navbar-link ${isActive('/assets') ? 'active' : ''}`}
                   onClick={closeMobileMenu}
                 >
-                  Assets
+                  <span>Assets</span>
+                  <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
                 </Link>
               </li>
               <li className="navbar-item">
@@ -88,7 +94,10 @@ function Navbar() {
                   className={`navbar-link ${isActive('/smart-city') ? 'active' : ''}`}
                   onClick={closeMobileMenu}
                 >
-                  Smart City
+                  <span>Smart City</span>
+                  <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
                 </Link>
               </li>
               <li className="navbar-item">
@@ -97,7 +106,10 @@ function Navbar() {
                   className={`navbar-link ${isActive('/farms') ? 'active' : ''}`}
                   onClick={closeMobileMenu}
                 >
-                  Farms
+                  <span>Farms</span>
+                  <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
                 </Link>
               </li>
               <li className="navbar-item">
@@ -106,7 +118,10 @@ function Navbar() {
                   className={`navbar-link ${isActive('/blog') ? 'active' : ''}`}
                   onClick={closeMobileMenu}
                 >
-                  Blog
+                  <span>Blog</span>
+                  <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
                 </Link>
               </li>
             </>
@@ -115,10 +130,13 @@ function Navbar() {
             <li className="navbar-item">
               <Link 
                 to="/portfolio" 
-                className={`navbar-link ${isActive('/portfolio') ? 'active' : ''}`}
+                className={`navbar-link navbar-link-portfolio ${isActive('/portfolio') ? 'active' : ''}`}
                 onClick={closeMobileMenu}
               >
-                Portfolio
+                <span>My Portfolio</span>
+                <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
               </Link>
             </li>
           )}
@@ -129,7 +147,10 @@ function Navbar() {
                 className={`navbar-link ${isActive('/admin') ? 'active' : ''}`}
                 onClick={closeMobileMenu}
               >
-                Admin
+                <span>Admin</span>
+                <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
               </Link>
             </li>
           )}
@@ -140,7 +161,10 @@ function Navbar() {
                 className={`navbar-link ${isActive('/superadmin') ? 'active' : ''}`}
                 onClick={closeMobileMenu}
               >
-                Super Admin
+                <span>Super Admin</span>
+                <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
               </Link>
             </li>
           )}
@@ -150,6 +174,9 @@ function Navbar() {
                 <button className="user-menu-btn" onClick={toggleUserMenu}>
                   <span className="user-avatar">{user?.name?.charAt(0).toUpperCase()}</span>
                   <span className="user-name">{user?.name}</span>
+                  <svg className="dropdown-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
                 </button>
                 {userMenuOpen && (
                   <div className="user-dropdown">
@@ -157,15 +184,6 @@ function Navbar() {
                       <p className="user-info-name">{user?.name}</p>
                       <p className="user-info-email">{user?.email}</p>
                     </div>
-                    {!user?.isAdmin && !user?.isSuperAdmin && (
-                      <Link 
-                        to="/portfolio" 
-                        className="dropdown-item dropdown-link"
-                        onClick={() => { setUserMenuOpen(false); closeMobileMenu(); }}
-                      >
-                        My Portfolio
-                      </Link>
-                    )}
                     {user?.isAdmin && !user?.isSuperAdmin && (
                       <Link 
                         to="/admin" 
