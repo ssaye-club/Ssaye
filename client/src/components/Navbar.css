@@ -110,15 +110,6 @@
   font-weight: 600;
 }
 
-/* Portfolio Link Special Styling */
-.navbar-link-portfolio {
-  /* No special styling - treated like other links */
-}
-
-.navbar-link-portfolio::after {
-  /* Keep default underline animation */
-}
-
 /* Hide arrows on desktop */
 .mobile-arrow {
   display: none;
@@ -385,10 +376,6 @@
   .navbar-link:hover .mobile-arrow {
     opacity: 1;
     transform: translateX(5px);
-  }
-
-  .navbar-link-portfolio {
-    /* No special styling on mobile */
   }
 
   .navbar-cta {

@@ -640,6 +640,7 @@
   color: #1a202c;
   background: white;
   cursor: pointer;
+  min-width: 200px;
 }
 
 .search-input {
@@ -648,7 +649,7 @@
   border-radius: 6px;
   font-size: 0.875rem;
   color: #1a202c;
-  min-width: 250px;
+  min-width: 200px;
 }
 
 /* Transactions Table */

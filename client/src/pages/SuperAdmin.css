@@ -646,24 +646,26 @@
 }
 
 .sa-modal-close {
-  background: none;
+  background: #f1f5f9;
   border: none;
-  font-size: 2rem;
-  color: #718096;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .sa-modal-close:hover {
-  background: #f7fafc;
-  color: #1a202c;
+  background: #e2e8f0;
+}
+
+.sa-modal-close svg {
+  width: 20px;
+  height: 20px;
+  color: #64748b;
 }
 
 .sa-modal-body {
@@ -836,6 +838,7 @@
 
   .sa-modal-footer {
     flex-direction: column-reverse;
+    padding: 24px 32px;
   }
 
   .btn-cancel,
@@ -2163,7 +2166,19 @@
 
   .approval-modal {
     width: 98%;
-    padding: 1.5rem;
+    padding: 0;
+  }
+
+  .approval-modal-header {
+    padding: 1rem;
+  }
+
+  .approval-modal-body {
+    padding: 1rem;
+  }
+
+  .approval-modal-footer {
+    padding: 1rem;
   }
 
   .approval-modal-header h2 {
@@ -2188,6 +2203,7 @@
   }
 
   .approval-modal-footer {
+    padding: 1rem;
     flex-direction: column;
     gap: 0.75rem;
   }

@@ -1742,7 +1742,7 @@ function SuperAdmin() {
           <div className="approval-modal" onClick={(e) => e.stopPropagation()}>
             <div className="approval-modal-header">
               <h2>Final Approval Review</h2>
-              <button className="modal-close" onClick={closeApprovalModal}>
+              <button className="sa-modal-close" onClick={closeApprovalModal}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
