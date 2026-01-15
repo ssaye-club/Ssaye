@@ -1,15 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import './Blog.css';
 
 function Blog() {
   const [email, setEmail] = useState('');
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const { showToast } = useToast();
 
   const handleSubscribe = (e) => {
     e.preventDefault();
     // Handle newsletter subscription
     console.log('Subscribing email:', email);
-    alert('Thank you for subscribing to SSAYE Blog!');
+    showToast('Thank you for subscribing to SSAYE Blog!', 'success');
     setEmail('');
+  };
+
+  const handleJoinClub = () => {
+    if (user) {
+      navigate('/portfolio');
+    } else {
+      navigate('/signup');
+    }
+  };
+
+  const handleExploreServices = () => {
+    navigate('/');
   };
 
   const blogPosts = [
@@ -220,8 +238,8 @@ function Blog() {
           <h2>Stay Informed About Smart Living</h2>
           <p>Join our community and never miss an update on blockchain, smart cities, and sustainable living</p>
           <div className="cta-buttons">
-            <button className="btn-primary">Join SSAYE Club</button>
-            <button className="btn-secondary">Explore Our Services</button>
+            <button className="btn-primary" onClick={handleJoinClub}>Join SSAYE Club</button>
+            <button className="btn-secondary" onClick={handleExploreServices}>Explore Our Services</button>
           </div>
         </div>
       </section>

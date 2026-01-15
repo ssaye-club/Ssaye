@@ -1,11 +1,13 @@
 import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import techCity from '../images/tech-city.avif';
 import './Home.css';
 
 function Home() {
   const { isAuthenticated } = useContext(AuthContext);
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [contactForm, setContactForm] = useState({
     name: '',
@@ -18,7 +20,7 @@ function Home() {
     e.preventDefault();
     // Handle subscription logic here
     console.log('Subscribed with email:', email);
-    alert('Thank you for subscribing!');
+    showToast('Thank you for subscribing!', 'success');
     setEmail('');
   };
 
@@ -274,7 +276,7 @@ function Home() {
                 <li>✓ Community engagement</li>
                 <li>✓ Exclusive resources</li>
               </ul>
-              <button className="btn-primary">Join Now</button>
+              <Link to="/premium" className="btn-primary">Join Now</Link>
             </div>
 
             <div className="membership-card free">
@@ -288,7 +290,7 @@ function Home() {
                 <li>✓ Event notifications</li>
               </ul>
               <p className="benefits">Sign up to participate in our communities, hear about the opportunities, events, specials and create your own community! SSAYE gives its members the opportunity to use our advanced resources to enhance their standard of living.</p>
-              <button className="btn-secondary">Sign Up Free</button>
+              <Link to={isAuthenticated() ? "/portfolio" : "/signup"} className="btn-secondary">Sign Up Free</Link>
             </div>
           </div>
         </div>

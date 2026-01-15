@@ -20,6 +20,58 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Password is required'],
     minlength: 6
   },
+  isAdmin: {
+    type: Boolean,
+    default: false
+  },
+  isSuperAdmin: {
+    type: Boolean,
+    default: false
+  },
+  isPremium: {
+    type: Boolean,
+    default: false
+  },
+  isDisabled: {
+    type: Boolean,
+    default: false
+  },
+  adminPermissions: {
+    countries: {
+      type: [String],
+      default: []
+    },
+    assetTypes: {
+      type: [String],
+      default: []
+    },
+    minAmount: {
+      type: Number,
+      default: null
+    },
+    maxAmount: {
+      type: Number,
+      default: null
+    }
+  },
+  notificationPreferences: {
+    emailNotifications: {
+      type: Boolean,
+      default: true
+    },
+    investmentUpdates: {
+      type: Boolean,
+      default: true
+    },
+    portfolioAlerts: {
+      type: Boolean,
+      default: true
+    },
+    marketingEmails: {
+      type: Boolean,
+      default: false
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now

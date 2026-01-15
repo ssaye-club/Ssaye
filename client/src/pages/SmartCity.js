@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './SmartCity.css';
 import smartTownshipImage from '../images/smart-township.avif';
 import smartApartmentImage from '../images/smart-apartment.avif';
@@ -8,6 +9,12 @@ import globalNetworkImage from '../images/global-network.avif';
 import partnershipImage from '../images/partnership.avif';
 
 function SmartCity() {
+  const navigate = useNavigate();
+
+  const handleExploreProperties = () => {
+    navigate('/investments');
+  };
+
   return (
     <div className="smart-city-page">
       {/* Hero Section */}
@@ -249,7 +256,7 @@ function SmartCity() {
           <h2>Ready to Join the Smart City Revolution?</h2>
           <p>Secure your place in the future of urban living today</p>
           <div className="cta-buttons">
-            <button className="btn-primary">Explore Properties</button>
+            <button className="btn-primary" onClick={handleExploreProperties}>Explore Properties</button>
             <button className="btn-secondary">Schedule Site Visit</button>
           </div>
         </div>

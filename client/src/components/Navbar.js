@@ -62,52 +62,56 @@ function Navbar() {
         </button>
 
         <ul className={`navbar-menu ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
-          <li className="navbar-item">
-            <Link 
-              to="/" 
-              className={`navbar-link ${isActive('/') ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Home
-            </Link>
-          </li>
-          <li className="navbar-item">
-            <Link 
-              to="/assets" 
-              className={`navbar-link ${isActive('/assets') ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Assets
-            </Link>
-          </li>
-          <li className="navbar-item">
-            <Link 
-              to="/smart-city" 
-              className={`navbar-link ${isActive('/smart-city') ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Smart City
-            </Link>
-          </li>
-          <li className="navbar-item">
-            <Link 
-              to="/farms" 
-              className={`navbar-link ${isActive('/farms') ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Farms
-            </Link>
-          </li>
-          <li className="navbar-item">
-            <Link 
-              to="/blog" 
-              className={`navbar-link ${isActive('/blog') ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Blog
-            </Link>
-          </li>
-          {isAuthenticated() && (
+          {!user?.isAdmin && !user?.isSuperAdmin && (
+            <>
+              <li className="navbar-item">
+                <Link 
+                  to="/" 
+                  className={`navbar-link ${isActive('/') ? 'active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  Home
+                </Link>
+              </li>
+              <li className="navbar-item">
+                <Link 
+                  to="/assets" 
+                  className={`navbar-link ${isActive('/assets') ? 'active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  Assets
+                </Link>
+              </li>
+              <li className="navbar-item">
+                <Link 
+                  to="/smart-city" 
+                  className={`navbar-link ${isActive('/smart-city') ? 'active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  Smart City
+                </Link>
+              </li>
+              <li className="navbar-item">
+                <Link 
+                  to="/farms" 
+                  className={`navbar-link ${isActive('/farms') ? 'active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  Farms
+                </Link>
+              </li>
+              <li className="navbar-item">
+                <Link 
+                  to="/blog" 
+                  className={`navbar-link ${isActive('/blog') ? 'active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  Blog
+                </Link>
+              </li>
+            </>
+          )}
+          {isAuthenticated() && !user?.isAdmin && !user?.isSuperAdmin && (
             <li className="navbar-item">
               <Link 
                 to="/portfolio" 
@@ -115,6 +119,28 @@ function Navbar() {
                 onClick={closeMobileMenu}
               >
                 Portfolio
+              </Link>
+            </li>
+          )}
+          {isAuthenticated() && user?.isAdmin && !user?.isSuperAdmin && (
+            <li className="navbar-item">
+              <Link 
+                to="/admin" 
+                className={`navbar-link ${isActive('/admin') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Admin
+              </Link>
+            </li>
+          )}
+          {isAuthenticated() && user?.isSuperAdmin && (
+            <li className="navbar-item">
+              <Link 
+                to="/superadmin" 
+                className={`navbar-link ${isActive('/superadmin') ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                Super Admin
               </Link>
             </li>
           )}
@@ -131,12 +157,39 @@ function Navbar() {
                       <p className="user-info-name">{user?.name}</p>
                       <p className="user-info-email">{user?.email}</p>
                     </div>
+                    {!user?.isAdmin && !user?.isSuperAdmin && (
+                      <Link 
+                        to="/portfolio" 
+                        className="dropdown-item dropdown-link"
+                        onClick={() => { setUserMenuOpen(false); closeMobileMenu(); }}
+                      >
+                        My Portfolio
+                      </Link>
+                    )}
+                    {user?.isAdmin && !user?.isSuperAdmin && (
+                      <Link 
+                        to="/admin" 
+                        className="dropdown-item dropdown-link"
+                        onClick={() => { setUserMenuOpen(false); closeMobileMenu(); }}
+                      >
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    {user?.isSuperAdmin && (
+                      <Link 
+                        to="/superadmin" 
+                        className="dropdown-item dropdown-link"
+                        onClick={() => { setUserMenuOpen(false); closeMobileMenu(); }}
+                      >
+                        Super Admin Dashboard
+                      </Link>
+                    )}
                     <Link 
-                      to="/portfolio" 
+                      to="/settings" 
                       className="dropdown-item dropdown-link"
                       onClick={() => { setUserMenuOpen(false); closeMobileMenu(); }}
                     >
-                      My Portfolio
+                      Settings
                     </Link>
                     <button className="dropdown-item" onClick={handleLogout}>
                       Logout

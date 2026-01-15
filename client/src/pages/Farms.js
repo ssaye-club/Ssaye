@@ -244,21 +244,21 @@ function Farms() {
       <section className="farms-stats-section">
         <div className="container">
           <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-number">90%</div>
-              <div className="stat-label">Less Water Used</div>
+            <div className="farm-stat-card">
+              <div className="farm-stat-number">90%</div>
+              <div className="farm-stat-label">Less Water Used</div>
             </div>
-            <div className="stat-card">
-              <div className="stat-number">365</div>
-              <div className="stat-label">Days of Growing</div>
+            <div className="farm-stat-card">
+              <div className="farm-stat-number">365</div>
+              <div className="farm-stat-label">Days of Growing</div>
             </div>
-            <div className="stat-card">
-              <div className="stat-number">10x</div>
-              <div className="stat-label">Higher Yield</div>
+            <div className="farm-stat-card">
+              <div className="farm-stat-number">10x</div>
+              <div className="farm-stat-label">Higher Yield</div>
             </div>
-            <div className="stat-card">
-              <div className="stat-number">100%</div>
-              <div className="stat-label">Pesticide Free</div>
+            <div className="farm-stat-card">
+              <div className="farm-stat-number">100%</div>
+              <div className="farm-stat-label">Pesticide Free</div>
             </div>
           </div>
         </div>

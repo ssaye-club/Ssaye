@@ -353,7 +353,7 @@
   margin: 0 auto;
 }
 
-.stat-card {
+.farm-stat-card {
   text-align: center;
   padding: 30px 20px;
   background: rgba(255, 255, 255, 0.1);
@@ -362,19 +362,19 @@
   transition: all 0.3s ease;
 }
 
-.stat-card:hover {
+.farm-stat-card:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-5px);
 }
 
-.stat-number {
+.farm-stat-number {
   font-size: 3.5rem;
   font-weight: bold;
   margin-bottom: 10px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.stat-label {
+.farm-stat-label {
   font-size: 1.1rem;
   opacity: 0.95;
   font-weight: 500;
@@ -475,7 +475,7 @@
     gap: 20px;
   }
 
-  .stat-number {
+  .farm-stat-number {
     font-size: 2.5rem;
   }
 
@@ -514,11 +514,11 @@
     font-size: 1.2rem;
   }
 
-  .stat-number {
+  .farm-stat-number {
     font-size: 2rem;
   }
 
-  .stat-label {
+  .farm-stat-label {
     font-size: 1rem;
   }
 }

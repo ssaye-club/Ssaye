@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Assets.css';
 import digitalAssetImage from '../images/crypto.webp';
 import residentialImage from '../images/residential-real-estate.avif';
@@ -7,6 +8,12 @@ import alternativeImage from '../images/alternative-assets.avif';
 import socialImage from '../images/social-assets.avif';
 
 function Assets() {
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/portfolio');
+  };
+
   return (
     <div className="assets-page">
       {/* Hero Section */}
@@ -289,7 +296,7 @@ function Assets() {
           <h2>Ready to Build Your Asset Portfolio?</h2>
           <p>Join thousands of successful investors who trust SSAYE for their asset management needs</p>
           <div className="cta-buttons">
-            <button className="btn-primary">Get Started Today</button>
+            <button className="btn-primary" onClick={handleGetStarted}>Get Started Today</button>
             <button className="btn-secondary">Schedule Consultation</button>
           </div>
         </div>
