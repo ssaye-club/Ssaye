@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import Pagination from '../components/Pagination';
 import './Portfolio.css';
 
 function Portfolio() {
@@ -13,6 +14,8 @@ function Portfolio() {
   const [sortBy, setSortBy] = useState('value');
   const [transactionFilter, setTransactionFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [applicationsPage, setApplicationsPage] = useState(1);
+  const itemsPerPage = 10;
   const [portfolioStats, setPortfolioStats] = useState({
     totalValue: 0,
     totalGrowth: 0,
@@ -1014,8 +1017,9 @@ function Portfolio() {
                     </button>
                   </div>
                 ) : (
+                  <>
                   <div className="applications-list">
-                    {applications.map((application) => (
+                    {applications.slice((applicationsPage - 1) * itemsPerPage, applicationsPage * itemsPerPage).map((application) => (
                       <div key={application._id} className="application-item">
                         <div className="application-header">
                           <div className="application-info">
@@ -1097,6 +1101,16 @@ function Portfolio() {
                       </div>
                     ))}
                   </div>
+
+                  {/* Applications Pagination */}
+                  {applications.length > itemsPerPage && (
+                    <Pagination
+                      currentPage={applicationsPage}
+                      totalPages={Math.ceil(applications.length / itemsPerPage)}
+                      onPageChange={(page) => setApplicationsPage(page)}
+                    />
+                  )}
+                  </>
                 )}
               </div>
             </div>

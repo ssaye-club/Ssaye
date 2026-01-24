@@ -2,12 +2,15 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useConfirmation } from '../hooks/useConfirmation';
+import ConfirmationModal from '../components/ConfirmationModal';
 import './Settings.css';
 
 function Settings() {
   const { user, token, logout, login, loading: authLoading } = useContext(AuthContext);
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const { confirmationState, showConfirmation } = useConfirmation();
 
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
@@ -72,6 +75,15 @@ function Settings() {
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
+    
+    const confirmed = await showConfirmation({
+      title: 'Update Profile',
+      message: 'Are you sure you want to update your profile information?',
+      type: 'info'
+    });
+    
+    if (!confirmed) return;
+    
     setLoading(true);
 
     try {
@@ -114,6 +126,16 @@ function Settings() {
       showToast('Password must be at least 6 characters', 'error');
       return;
     }
+
+    const confirmed = await showConfirmation({
+      title: 'Change Password',
+      message: 'Are you sure you want to change your password? You will need to use your new password for future logins.',
+      confirmText: 'Change Password',
+      cancelText: 'Cancel',
+      type: 'warning'
+    });
+
+    if (!confirmed) return;
 
     setLoading(true);
 
@@ -181,17 +203,15 @@ function Settings() {
   };
 
   const handleDeleteAccount = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to delete your account? This action cannot be undone.'
-    );
+    const confirmed = await showConfirmation({
+      title: 'Delete Account',
+      message: 'Are you sure you want to permanently delete your account? This will delete all your data including investments, portfolio, and personal information. This action cannot be undone.',
+      confirmText: 'Delete Account',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
 
     if (!confirmed) return;
-
-    const doubleConfirm = window.confirm(
-      'This will permanently delete all your data. Are you absolutely sure?'
-    );
-
-    if (!doubleConfirm) return;
 
     setLoading(true);
 
@@ -493,6 +513,18 @@ function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationState.isOpen}
+        title={confirmationState.title}
+        message={confirmationState.message}
+        confirmText={confirmationState.confirmText}
+        cancelText={confirmationState.cancelText}
+        type={confirmationState.type}
+        onConfirm={confirmationState.onConfirm}
+        onCancel={confirmationState.onCancel}
+      />
     </div>
   );
 }

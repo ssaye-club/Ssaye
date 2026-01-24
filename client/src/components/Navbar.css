@@ -174,7 +174,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -360,6 +360,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
   }
 
   .navbar-link span {
@@ -373,9 +375,23 @@
     transition: all 0.3s ease;
   }
 
-  .navbar-link:hover .mobile-arrow {
+  /* Hover state for mobile */
+  .navbar-link:hover .mobile-arrow,
+  .navbar-link:active .mobile-arrow {
     opacity: 1;
     transform: translateX(5px);
+  }
+
+  /* Remove hover color change on mobile to avoid confusion */
+  .navbar-link:hover {
+    color: #fff;
+  }
+  
+  /* Prevent touch feedback from looking like active state */
+  .navbar-link:active:not(.active) {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
   }
 
   .navbar-cta {
@@ -395,6 +411,22 @@
     display: none;
   }
 
+  /* Mobile active state styling - make it distinct and clear */
+  .navbar-link.active {
+    background: rgba(102, 126, 234, 0.2);
+    border-radius: 8px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    color: #667eea !important;
+    font-weight: 700;
+    border-left: 4px solid #667eea;
+  }
+
+  .navbar-link.active .mobile-arrow {
+    opacity: 1;
+    color: #667eea;
+  }
+
   .user-menu-container {
     width: 100%;
   }
@@ -405,6 +437,11 @@
     padding: 1.25rem 1.5rem;
     border-radius: 8px;
     margin-top: 1rem;
+  }
+
+  .user-menu-btn .user-name {
+    font-size: 1.3rem;
+    max-width: none;
   }
 
   .user-dropdown {

@@ -7,6 +7,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Prevent layout shift when body scroll is locked */
+body.scroll-locked {
+  overflow: hidden !important;
+  padding-right: var(--scrollbar-width, 0px);
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

@@ -1,9 +1,13 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
+import { useConfirmation } from '../hooks/useConfirmation';
+import ConfirmationModal from '../components/ConfirmationModal';
 import './InvestmentForm.css';
 
 function InvestmentForm({ investment, onClose, onSubmit }) {
   const { user } = useContext(AuthContext);
+  const { confirmationState, showConfirmation } = useConfirmation();
   const [formData, setFormData] = useState({
     // Pre-fill with user data
     fullName: user?.name || '',
@@ -27,6 +31,14 @@ function InvestmentForm({ investment, onClose, onSubmit }) {
 
   const [errors, setErrors] = useState({});
   const [step, setStep] = useState(1);
+
+  // Lock body scroll when form is displayed
+  useEffect(() => {
+    lockScroll();
+    return () => {
+      unlockScroll();
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -115,6 +127,17 @@ function InvestmentForm({ investment, onClose, onSubmit }) {
     e.preventDefault();
     
     if (step === 3 && validateStep3()) {
+      // Confirm before submitting
+      const confirmed = await showConfirmation({
+        title: 'Submit Investment Application',
+        message: `You are about to submit an investment application for ${formatCurrency(formData.investmentAmount)} in ${investment.name}. Please confirm that all information is correct.`,
+        confirmText: 'Submit Application',
+        cancelText: 'Review Again',
+        type: 'info'
+      });
+
+      if (!confirmed) return;
+
       // Submit the investment
       const investmentData = {
         ...formData,
@@ -479,6 +502,18 @@ function InvestmentForm({ investment, onClose, onSubmit }) {
           </div>
         </form>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationState.isOpen}
+        title={confirmationState.title}
+        message={confirmationState.message}
+        confirmText={confirmationState.confirmText}
+        cancelText={confirmationState.cancelText}
+        type={confirmationState.type}
+        onConfirm={confirmationState.onConfirm}
+        onCancel={confirmationState.onCancel}
+      />
     </div>
   );
 }

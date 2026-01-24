@@ -2,11 +2,16 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
+import { useConfirmation } from '../hooks/useConfirmation';
+import ConfirmationModal from '../components/ConfirmationModal';
+import Pagination from '../components/Pagination';
 import './SuperAdmin.css';
 
 function SuperAdmin() {
   const { user, isAuthenticated, loading: authLoading } = useContext(AuthContext);
   const { showToast } = useToast();
+  const { confirmationState, showConfirmation } = useConfirmation();
   const [users, setUsers] = useState([]);
   const [pendingInvestments, setPendingInvestments] = useState([]);
   const [approvedInvestments, setApprovedInvestments] = useState([]);
@@ -68,6 +73,13 @@ function SuperAdmin() {
   });
   const [approvedSort, setApprovedSort] = useState('dateDesc');
 
+  // Pagination states
+  const [usersPage, setUsersPage] = useState(1);
+  const [pendingPage, setPendingPage] = useState(1);
+  const [approvedPage, setApprovedPage] = useState(1);
+  const [opportunitiesPage, setOpportunitiesPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     if (isAuthenticated() && user?.isSuperAdmin) {
       fetchUsers();
@@ -77,6 +89,19 @@ function SuperAdmin() {
       fetchOpportunities();
     }
   }, [isAuthenticated, user]);
+
+  // Lock/unlock body scroll when modals are open
+  useEffect(() => {
+    if (showApprovalModal || showPermissionsModal || showOpportunityModal) {
+      lockScroll();
+    } else {
+      unlockScroll();
+    }
+
+    return () => {
+      unlockScroll();
+    };
+  }, [showApprovalModal, showPermissionsModal, showOpportunityModal]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -260,7 +285,15 @@ function SuperAdmin() {
   };
 
   const demoteAdmin = async (userId) => {
-    if (!window.confirm('Are you sure you want to demote this admin to regular user?')) {
+    const confirmed = await showConfirmation({
+      title: 'Demote Admin',
+      message: 'Are you sure you want to demote this admin to regular user? This will remove all admin privileges.',
+      confirmText: 'Demote',
+      cancelText: 'Cancel',
+      type: 'warning'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -291,7 +324,15 @@ function SuperAdmin() {
   };
 
   const deleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    const confirmed = await showConfirmation({
+      title: 'Delete User',
+      message: 'Are you sure you want to delete this user? This action cannot be undone and will permanently remove all user data.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -323,7 +364,15 @@ function SuperAdmin() {
 
   const toggleDisableUser = async (userId, currentStatus) => {
     const action = currentStatus ? 'enable' : 'disable';
-    if (!window.confirm(`Are you sure you want to ${action} this user account?`)) {
+    const confirmed = await showConfirmation({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} User Account`,
+      message: `Are you sure you want to ${action} this user account?`,
+      confirmText: action.charAt(0).toUpperCase() + action.slice(1),
+      cancelText: 'Cancel',
+      type: action === 'disable' ? 'warning' : 'info'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -408,6 +457,16 @@ function SuperAdmin() {
 
   const handleFinalApprove = async () => {
     if (!selectedInvestment) return;
+
+    const confirmed = await showConfirmation({
+      title: 'Final Approval',
+      message: `You are about to give final approval for ${selectedInvestment.fullName}'s investment of ${formatCurrency(selectedInvestment.investmentAmount)} in ${selectedInvestment.investmentName}. This will add the investment to their portfolio.`,
+      confirmText: 'Approve & Add to Portfolio',
+      cancelText: 'Cancel',
+      type: 'info'
+    });
+
+    if (!confirmed) return;
 
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -562,7 +621,15 @@ function SuperAdmin() {
   };
 
   const handleDeleteOpportunity = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this investment opportunity?')) {
+    const confirmed = await showConfirmation({
+      title: 'Delete Investment Opportunity',
+      message: 'Are you sure you want to delete this investment opportunity? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -694,6 +761,13 @@ function SuperAdmin() {
 
     return true;
   });
+
+  // Paginate users
+  const totalUsersPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (usersPage - 1) * itemsPerPage,
+    usersPage * itemsPerPage
+  );
 
   if (loading) {
     return (
@@ -838,7 +912,7 @@ function SuperAdmin() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((u, index) => (
+              {paginatedUsers.map((u, index) => (
                 <tr key={u._id}>
                   <td>
                     <div className="user-name">
@@ -964,6 +1038,15 @@ function SuperAdmin() {
             </div>
           )}
         </div>
+
+        {/* Users Pagination */}
+        {filteredUsers.length > itemsPerPage && (
+          <Pagination
+            currentPage={usersPage}
+            totalPages={totalUsersPages}
+            onPageChange={(page) => setUsersPage(page)}
+          />
+        )}
         </>
         )}
 
@@ -1043,6 +1126,7 @@ function SuperAdmin() {
                 <p>{pendingInvestments.length === 0 ? 'All investment applications have been reviewed' : 'No investments match your filters'}</p>
               </div>
             ) : (
+              <>
               <div className="pending-investments-table">
                 <table>
                   <thead>
@@ -1057,20 +1141,26 @@ function SuperAdmin() {
                     </tr>
                   </thead>
                   <tbody>
-                    {pendingInvestments.filter(app => {
-                      if (pendingFilters.country !== 'all' && app.country !== pendingFilters.country) return false;
-                      if (pendingFilters.investmentName && !app.investmentName.toLowerCase().includes(pendingFilters.investmentName.toLowerCase())) return false;
-                      return true;
-                    }).sort((a, b) => {
-                      switch(pendingSort) {
-                        case 'dateDesc': return new Date(b.createdAt) - new Date(a.createdAt);
-                        case 'dateAsc': return new Date(a.createdAt) - new Date(b.createdAt);
-                        case 'amountDesc': return b.investmentAmount - a.investmentAmount;
-                        case 'amountAsc': return a.investmentAmount - b.investmentAmount;
-                        case 'investorName': return (a.fullName || '').localeCompare(b.fullName || '');
-                        default: return 0;
-                      }
-                    }).map((application) => (
+                    {(() => {
+                      const filteredPending = pendingInvestments.filter(app => {
+                        if (pendingFilters.country !== 'all' && app.country !== pendingFilters.country) return false;
+                        if (pendingFilters.investmentName && !app.investmentName.toLowerCase().includes(pendingFilters.investmentName.toLowerCase())) return false;
+                        return true;
+                      }).sort((a, b) => {
+                        switch(pendingSort) {
+                          case 'dateDesc': return new Date(b.createdAt) - new Date(a.createdAt);
+                          case 'dateAsc': return new Date(a.createdAt) - new Date(b.createdAt);
+                          case 'amountDesc': return b.investmentAmount - a.investmentAmount;
+                          case 'amountAsc': return a.investmentAmount - b.investmentAmount;
+                          case 'investorName': return (a.fullName || '').localeCompare(b.fullName || '');
+                          default: return 0;
+                        }
+                      });
+                      
+                      const startIndex = (pendingPage - 1) * itemsPerPage;
+                      const paginatedPending = filteredPending.slice(startIndex, startIndex + itemsPerPage);
+                      
+                      return paginatedPending.map((application) => (
                       <tr key={application._id}>
                         <td>
                           <div className="investment-info">
@@ -1106,10 +1196,27 @@ function SuperAdmin() {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    ));
+                    })()}
                   </tbody>
                 </table>
               </div>
+              {(() => {
+                const filteredPending = pendingInvestments.filter(app => {
+                  if (pendingFilters.country !== 'all' && app.country !== pendingFilters.country) return false;
+                  if (pendingFilters.investmentName && !app.investmentName.toLowerCase().includes(pendingFilters.investmentName.toLowerCase())) return false;
+                  return true;
+                });
+                const totalPendingPages = Math.ceil(filteredPending.length / itemsPerPage);
+                return filteredPending.length > itemsPerPage && (
+                  <Pagination
+                    currentPage={pendingPage}
+                    totalPages={totalPendingPages}
+                    onPageChange={setPendingPage}
+                  />
+                );
+              })()}
+              </>
             )}
           </div>
         )}
@@ -1190,6 +1297,7 @@ function SuperAdmin() {
                 <p>{approvedInvestments.length === 0 ? 'Approved applications will appear here' : 'Try adjusting your filters'}</p>
               </div>
             ) : (
+              <>
               <div className="approved-investments-table">
                 <table>
                   <thead>
@@ -1205,20 +1313,26 @@ function SuperAdmin() {
                     </tr>
                   </thead>
                   <tbody>
-                    {approvedInvestments.filter(app => {
-                      if (approvedFilters.country !== 'all' && app.country !== approvedFilters.country) return false;
-                      if (approvedFilters.investmentName && !app.investmentName.toLowerCase().includes(approvedFilters.investmentName.toLowerCase())) return false;
-                      return true;
-                    }).sort((a, b) => {
-                      switch(approvedSort) {
-                        case 'dateDesc': return new Date(b.finalApprovedAt) - new Date(a.finalApprovedAt);
-                        case 'dateAsc': return new Date(a.finalApprovedAt) - new Date(b.finalApprovedAt);
-                        case 'amountDesc': return b.investmentAmount - a.investmentAmount;
-                        case 'amountAsc': return a.investmentAmount - b.investmentAmount;
-                        case 'investorName': return (a.user?.name || '').localeCompare(b.user?.name || '');
-                        default: return 0;
-                      }
-                    }).map((application) => (
+                    {(() => {
+                      const filteredApproved = approvedInvestments.filter(app => {
+                        if (approvedFilters.country !== 'all' && app.country !== approvedFilters.country) return false;
+                        if (approvedFilters.investmentName && !app.investmentName.toLowerCase().includes(approvedFilters.investmentName.toLowerCase())) return false;
+                        return true;
+                      }).sort((a, b) => {
+                        switch(approvedSort) {
+                          case 'dateDesc': return new Date(b.finalApprovedAt) - new Date(a.finalApprovedAt);
+                          case 'dateAsc': return new Date(a.finalApprovedAt) - new Date(b.finalApprovedAt);
+                          case 'amountDesc': return b.investmentAmount - a.investmentAmount;
+                          case 'amountAsc': return a.investmentAmount - b.investmentAmount;
+                          case 'investorName': return (a.user?.name || '').localeCompare(b.user?.name || '');
+                          default: return 0;
+                        }
+                      });
+                      
+                      const startIndex = (approvedPage - 1) * itemsPerPage;
+                      const paginatedApproved = filteredApproved.slice(startIndex, startIndex + itemsPerPage);
+                      
+                      return paginatedApproved.map((application) => (
                       <tr key={application._id}>
                         <td>
                           <div className="investment-info">
@@ -1269,10 +1383,27 @@ function SuperAdmin() {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    ));
+                    })()}
                   </tbody>
                 </table>
               </div>
+              {(() => {
+                const filteredApproved = approvedInvestments.filter(app => {
+                  if (approvedFilters.country !== 'all' && app.country !== approvedFilters.country) return false;
+                  if (approvedFilters.investmentName && !app.investmentName.toLowerCase().includes(approvedFilters.investmentName.toLowerCase())) return false;
+                  return true;
+                });
+                const totalApprovedPages = Math.ceil(filteredApproved.length / itemsPerPage);
+                return filteredApproved.length > itemsPerPage && (
+                  <Pagination
+                    currentPage={approvedPage}
+                    totalPages={totalApprovedPages}
+                    onPageChange={setApprovedPage}
+                  />
+                );
+              })()}
+              </>
             )}
           </div>
         )}
@@ -1299,8 +1430,13 @@ function SuperAdmin() {
                 </button>
               </div>
             ) : (
+              <>
               <div className="opportunities-grid">
-                {opportunities.map((opp) => (
+                {(() => {
+                  const startIndex = (opportunitiesPage - 1) * itemsPerPage;
+                  const paginatedOpportunities = opportunities.slice(startIndex, startIndex + itemsPerPage);
+                  
+                  return paginatedOpportunities.map((opp) => (
                   <div key={opp._id} className="opportunity-management-card">
                     <div className="opp-card-header">
                       <h3>{opp.name}</h3>
@@ -1363,8 +1499,17 @@ function SuperAdmin() {
                       </button>
                     </div>
                   </div>
-                ))}
+                ));
+                })()}
               </div>
+              {opportunities.length > itemsPerPage && (
+                <Pagination
+                  currentPage={opportunitiesPage}
+                  totalPages={Math.ceil(opportunities.length / itemsPerPage)}
+                  onPageChange={setOpportunitiesPage}
+                />
+              )}
+              </>
             )}
           </div>
         )}
@@ -1853,6 +1998,18 @@ function SuperAdmin() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationState.isOpen}
+        title={confirmationState.title}
+        message={confirmationState.message}
+        confirmText={confirmationState.confirmText}
+        cancelText={confirmationState.cancelText}
+        type={confirmationState.type}
+        onConfirm={confirmationState.onConfirm}
+        onCancel={confirmationState.onCancel}
+      />
     </div>
   );
 }

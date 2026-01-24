@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
+const InvestmentApplication = require('../models/InvestmentApplication');
 const authMiddleware = require('../middleware/auth');
 
 // @route   POST api/auth/signup
@@ -319,6 +320,9 @@ router.delete('/delete-account', authMiddleware, async (req, res) => {
     if (user.isSuperAdmin) {
       return res.status(403).json({ message: 'Super admin accounts cannot be deleted' });
     }
+
+    // Delete all user's investment applications
+    await InvestmentApplication.deleteMany({ userId });
 
     // Delete user
     await User.findByIdAndDelete(userId);

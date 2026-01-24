@@ -2,7 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
 import InvestmentForm from './InvestmentForm';
+import Pagination from '../components/Pagination';
 import './Investments.css';
 
 function Investments() {
@@ -16,10 +18,25 @@ function Investments() {
   const [investmentForForm, setInvestmentForForm] = useState(null);
   const [investments, setInvestments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchInvestments();
   }, []);
+
+  // Lock/unlock body scroll when modal is open
+  useEffect(() => {
+    if (selectedInvestment) {
+      lockScroll();
+    } else {
+      unlockScroll();
+    }
+
+    return () => {
+      unlockScroll();
+    };
+  }, [selectedInvestment]);
 
   const fetchInvestments = async () => {
     setLoading(true);
@@ -63,6 +80,13 @@ function Investments() {
                          investment.location.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  // Paginate investments
+  const totalPages = Math.ceil(filteredInvestments.length / itemsPerPage);
+  const paginatedInvestments = filteredInvestments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -176,7 +200,7 @@ function Investments() {
           </div>
         ) : (
           <div className="investments-grid">
-            {filteredInvestments.map((investment) => (
+            {paginatedInvestments.map((investment) => (
               <div key={investment._id} className="investment-card">
                 {investment.images && investment.images.length > 0 && (
                   <div className="card-image">
@@ -246,6 +270,15 @@ function Investments() {
             </div>
           ))}
           </div>
+        )}
+
+        {/* Pagination */}
+        {filteredInvestments.length > itemsPerPage && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
         )}
       </div>
 

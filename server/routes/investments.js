@@ -5,7 +5,7 @@ const InvestmentApplication = require('../models/InvestmentApplication');
 const Investment = require('../models/Investment');
 const InvestmentOpportunity = require('../models/InvestmentOpportunity');
 const User = require('../models/User');
-const { sendInvestmentConfirmationEmail } = require('../utils/emailService');
+const { sendInvestmentConfirmationEmail, sendAdminApprovalEmail, sendFinalApprovalEmail } = require('../utils/emailService');
 
 // @route   POST /api/investments/apply
 // @desc    Submit an investment application
@@ -142,6 +142,22 @@ router.put('/admin/review/:id', auth, async (req, res) => {
 
     await application.save();
 
+    // Send admin approval email if status is set to 'waiting-payment'
+    if (status === 'waiting-payment') {
+      const emailData = {
+        applicationId: application._id.toString().slice(-8).toUpperCase(),
+        investmentName: application.investmentName,
+        investmentAmount: application.investmentAmount,
+        fullName: application.fullName,
+        email: application.email,
+        paymentMethod: application.paymentMethod || 'Not specified',
+        adminNotes: application.adminNotes || ''
+      };
+      sendAdminApprovalEmail(emailData).catch(err => {
+        console.error('Failed to send admin approval email:', err);
+      });
+    }
+
     // Populate user data before sending response
     await application.populate('user', 'name email');
     await application.populate('reviewedBy', 'name');
@@ -190,6 +206,20 @@ router.put('/admin/approve/:id', auth, async (req, res) => {
     // Populate user data before sending response
     await application.populate('user', 'name email');
     await application.populate('approvedByAdmin', 'name');
+
+    // Send admin approval email
+    const emailData = {
+      applicationId: application._id.toString().slice(-8).toUpperCase(),
+      investmentName: application.investmentName,
+      investmentAmount: application.investmentAmount,
+      fullName: application.fullName,
+      email: application.email,
+      paymentMethod: application.paymentMethod || 'Not specified'
+    };
+
+    sendAdminApprovalEmail(emailData).catch(err => {
+      console.error('Failed to send admin approval email:', err);
+    });
 
     res.json({
       success: true,
@@ -271,6 +301,22 @@ router.put('/superadmin/final-approve/:id', auth, async (req, res) => {
     });
 
     await investment.save();
+
+    // Populate application user data for email
+    await application.populate('user', 'name email');
+
+    // Send final approval email
+    const emailData = {
+      applicationId: application._id.toString().slice(-8).toUpperCase(),
+      investmentName: application.investmentName,
+      investmentAmount: application.investmentAmount,
+      fullName: application.fullName,
+      email: application.email
+    };
+
+    sendFinalApprovalEmail(emailData).catch(err => {
+      console.error('Failed to send final approval email:', err);
+    });
 
     res.json({
       success: true,

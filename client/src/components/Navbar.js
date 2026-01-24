@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
 import logo from '../images/logo.png';
 import './Navbar.css';
 
@@ -20,6 +21,20 @@ function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Lock/unlock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      lockScroll();
+    } else {
+      unlockScroll();
+    }
+
+    // Cleanup function to ensure scroll is unlocked when component unmounts
+    return () => {
+      unlockScroll();
+    };
+  }, [mobileMenuOpen]);
 
   const isActive = (path) => {
     return location.pathname === path;

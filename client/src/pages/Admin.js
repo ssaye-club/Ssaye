@@ -2,6 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { lockScroll, unlockScroll } from '../utils/scrollLock';
+import Pagination from '../components/Pagination';
 import './Admin.css';
 
 function Admin() {
@@ -12,6 +14,21 @@ function Admin() {
   const [filter, setFilter] = useState('all');
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [approvalModalApplication, setApprovalModalApplication] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Lock/unlock body scroll when modals are open
+  useEffect(() => {
+    if (approvalModalApplication || selectedApplication) {
+      lockScroll();
+    } else {
+      unlockScroll();
+    }
+
+    return () => {
+      unlockScroll();
+    };
+  }, [approvalModalApplication, selectedApplication]);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [reviewData, setReviewData] = useState({
     status: '',
@@ -149,6 +166,13 @@ function Admin() {
     if (filter === 'all') return true;
     return app.status === filter;
   });
+
+  // Paginate applications
+  const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
+  const paginatedApplications = filteredApplications.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const stats = {
     total: applications.length,
@@ -288,7 +312,7 @@ function Admin() {
             </div>
           ) : (
             <div className="applications-table">
-              {filteredApplications.map((application) => (
+              {paginatedApplications.map((application) => (
                 <div key={application._id} className="admin-application-card">
                   <div className="application-main">
                     <div className="application-user">
@@ -341,6 +365,15 @@ function Admin() {
                 </div>
               ))}
             </div>
+          )}
+
+          {/* Pagination */}
+          {filteredApplications.length > itemsPerPage && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
           )}
         </div>
 
