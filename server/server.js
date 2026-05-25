@@ -23,10 +23,14 @@ const authRoutes = require('./routes/auth');
 const investmentRoutes = require('./routes/investments');
 const superAdminRoutes = require('./routes/superadmin');
 const opportunitiesRoutes = require('./routes/opportunities');
+const marketRoutes = require('./routes/market');
+const chatRoutes = require('./routes/chat');
 app.use('/api/auth', authRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/superadmin', superAdminRoutes);
 app.use('/api/opportunities', opportunitiesRoutes);
+app.use('/api/market', marketRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Basic routes
 app.get('/api/health', (req, res) => {

@@ -258,4 +258,38 @@ router.put('/users/:id/enable', superAdminMiddleware, async (req, res) => {
   }
 });
 
+// @route   PUT /api/superadmin/users/:id/toggle-premium
+// @desc    Toggle user premium status
+// @access  Super Admin only
+router.put('/users/:id/toggle-premium', superAdminMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Prevent modifying super admin premium status
+    if (user.isSuperAdmin) {
+      return res.status(400).json({ message: 'Cannot modify super admin premium status' });
+    }
+
+    user.isPremium = !user.isPremium;
+    await user.save();
+
+    res.json({ 
+      message: `User premium status ${user.isPremium ? 'enabled' : 'disabled'} successfully`,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isPremium: user.isPremium
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

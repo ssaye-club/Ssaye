@@ -403,6 +403,48 @@ function SuperAdmin() {
     }
   };
 
+  const togglePremiumStatus = async (userId, currentStatus) => {
+    const action = currentStatus ? 'remove premium from' : 'grant premium to';
+    const confirmed = await showConfirmation({
+      title: `${currentStatus ? 'Remove' : 'Grant'} Premium Access`,
+      message: `Are you sure you want to ${action} this user?`,
+      confirmText: currentStatus ? 'Remove Premium' : 'Grant Premium',
+      cancelText: 'Cancel',
+      type: 'info'
+    });
+    
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/api/superadmin/users/${userId}/toggle-premium`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showToast(data.message, 'success');
+        setOpenActionMenuId(null);
+        fetchUsers();
+        fetchStats();
+      } else {
+        const data = await response.json();
+        showToast(data.message || 'Failed to toggle premium status', 'error');
+      }
+    } catch (error) {
+      console.error('Error toggling premium status:', error);
+      showToast('Failed to toggle premium status', 'error');
+    }
+  };
+
   const fetchPendingInvestments = async () => {
     try {
       const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -992,6 +1034,25 @@ function SuperAdmin() {
                                   </button>
                                 </>
                               )}
+                              <button
+                                className="dropdown-item"
+                                onClick={() => togglePremiumStatus(u._id, u.isPremium)}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  {u.isPremium ? (
+                                    <>
+                                      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                                      <path d="M2 17l10 5 10-5" />
+                                      <path d="M2 12l10 5 10-5" />
+                                    </>
+                                  ) : (
+                                    <>
+                                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                    </>
+                                  )}
+                                </svg>
+                                {u.isPremium ? 'Remove Premium' : 'Grant Premium'}
+                              </button>
                               <button
                                 className="dropdown-item"
                                 onClick={() => toggleDisableUser(u._id, u.isDisabled)}

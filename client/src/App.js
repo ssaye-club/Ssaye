@@ -5,6 +5,7 @@ import { ToastProvider } from './context/ToastContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import Chatbot from './components/ChatBot';
 import Home from './pages/Home';
 import Assets from './pages/Assets';
 import SmartCity from './pages/SmartCity';
@@ -45,6 +46,7 @@ function App() {
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </main>
+          <Chatbot />
           <Footer />
         </div>
       </Router>
