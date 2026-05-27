@@ -116,8 +116,20 @@ function Navbar() {
                 </Link>
               </li>
               <li className="navbar-item">
-                <Link 
-                  to="/farms" 
+                <Link
+                  to="/marketplace"
+                  className={`navbar-link ${isActive('/marketplace') ? 'active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  <span>Marketplace</span>
+                  <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </Link>
+              </li>
+              <li className="navbar-item">
+                <Link
+                  to="/farms"
                   className={`navbar-link ${isActive('/farms') ? 'active' : ''}`}
                   onClick={closeMobileMenu}
                 >
@@ -170,18 +182,32 @@ function Navbar() {
             </li>
           )}
           {isAuthenticated() && user?.isSuperAdmin && (
-            <li className="navbar-item">
-              <Link 
-                to="/superadmin" 
-                className={`navbar-link ${isActive('/superadmin') ? 'active' : ''}`}
-                onClick={closeMobileMenu}
-              >
-                <span>Super Admin</span>
-                <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 18l6-6-6-6"/>
-                </svg>
-              </Link>
-            </li>
+            <>
+              <li className="navbar-item">
+                <Link
+                  to="/superadmin"
+                  className={`navbar-link ${isActive('/superadmin') ? 'active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  <span>Super Admin</span>
+                  <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </Link>
+              </li>
+              <li className="navbar-item">
+                <Link
+                  to="/marketplace-manager"
+                  className={`navbar-link navbar-link-mm ${isActive('/marketplace-manager') ? 'active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  <span>🛒 Marketplace Manager</span>
+                  <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </Link>
+              </li>
+            </>
           )}
           {isAuthenticated() ? (
             <li className="navbar-item navbar-user">

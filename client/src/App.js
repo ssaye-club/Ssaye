@@ -19,6 +19,8 @@ import Admin from './pages/Admin';
 import SuperAdmin from './pages/SuperAdmin';
 import Premium from './pages/Premium';
 import Settings from './pages/Settings';
+import Marketplace from './pages/Marketplace';
+import MarketplaceManager from './pages/MarketplaceManager';
 import './App.css';
 
 function App() {
@@ -34,6 +36,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/assets" element={<Assets />} />
               <Route path="/smart-city" element={<SmartCity />} />
+              <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/farms" element={<Farms />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/login" element={<Login />} />
@@ -44,6 +47,7 @@ function App() {
               <Route path="/superadmin" element={<SuperAdmin />} />
               <Route path="/premium" element={<Premium />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/marketplace-manager" element={<MarketplaceManager />} />
             </Routes>
           </main>
           <Chatbot />

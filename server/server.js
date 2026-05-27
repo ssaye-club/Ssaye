@@ -25,12 +25,18 @@ const superAdminRoutes = require('./routes/superadmin');
 const opportunitiesRoutes = require('./routes/opportunities');
 const marketRoutes = require('./routes/market');
 const chatRoutes = require('./routes/chat');
+const productRoutes = require('./routes/products');
+const marketplaceOrderRoutes = require('./routes/marketplaceOrders');
+const productCompareRoutes   = require('./routes/productCompare');
 app.use('/api/auth', authRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/superadmin', superAdminRoutes);
 app.use('/api/opportunities', opportunitiesRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/marketplace-orders', marketplaceOrderRoutes);
+app.use('/api/compare', productCompareRoutes);
 
 // Basic routes
 app.get('/api/health', (req, res) => {
