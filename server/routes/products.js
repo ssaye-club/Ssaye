@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const UserActivity   = require('../models/UserActivity');
+const authMiddleware = require('../middleware/auth');
 
 // @route   GET /api/products
 // @desc    Get all products sorted by id ascending
@@ -41,6 +43,37 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/products/search-activity
+// @desc    Record a search keyword for the logged-in user
+// @access  Private
+router.post('/search-activity', authMiddleware, async (req, res) => {
+  try {
+    const { keyword } = req.body;
+    if (!keyword || !keyword.trim()) {
+      return res.status(400).json({ success: false, message: 'keyword required' });
+    }
+    const kw = keyword.trim().toLowerCase();
+
+    await UserActivity.findOneAndUpdate(
+      { user: req.user.userId },
+      {
+        $push: {
+          searches: {
+            $each: [{ keyword: kw, searchedAt: new Date() }],
+            $slice: -50, // keep the 50 most recent searches
+          },
+        },
+      },
+      { upsert: true }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Search activity error:', error.message);
+    res.status(500).json({ success: false });
   }
 });
 

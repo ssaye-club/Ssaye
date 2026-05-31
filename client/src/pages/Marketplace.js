@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useContext, useEffect } from 'react';
+import React, { useState, useMemo, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import './Marketplace.css';
@@ -73,6 +73,89 @@ function LoginPromptModal({ onClose, onLogin }) {
   );
 }
 
+// ─── Buy Now Modal ────────────────────────────────────────────────────────────
+function BuyNowModal({ product, quantity, onClose, onSuccess }) {
+  const { token } = useContext(AuthContext);
+  const [placing, setPlacing] = useState(false);
+  const [error,   setError]   = useState(null);
+
+  const handleConfirm = async () => {
+    setPlacing(true);
+    setError(null);
+    try {
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      const res = await fetch(`${API_URL}/api/marketplace-orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          items: [{
+            productId: product.id,
+            name:      product.name,
+            brand:     product.brand,
+            category:  product.category,
+            emoji:     product.emoji,
+            price:     product.price,
+            quantity,
+          }],
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        onSuccess(data.order);
+      } else {
+        setError(data.message || 'Could not place your order. Please try again.');
+      }
+    } catch {
+      setError('Could not reach the server. Please try again.');
+    } finally {
+      setPlacing(false);
+    }
+  };
+
+  return (
+    <div className="mp-modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="bn-modal-title">
+      <div className="mp-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="mp-modal-close" onClick={onClose} aria-label="Close">✕</button>
+        <div className="mp-modal-icon">{product.emoji}</div>
+        <h2 className="mp-modal-title" id="bn-modal-title">Confirm Order</h2>
+        <p className="mp-modal-body">
+          <strong>{product.name}</strong><br />
+          Qty: {quantity} · Total: <strong>${(product.price * quantity).toFixed(2)}</strong>
+        </p>
+        {error && <p className="mp-checkout-error" style={{ marginBottom: '0.75rem' }}>{error}</p>}
+        <div className="mp-modal-actions">
+          <button className="mp-buy-now-confirm-btn" onClick={handleConfirm} disabled={placing}>
+            {placing ? 'Placing Order…' : 'Place Order'}
+          </button>
+          <button className="mp-modal-btn-secondary" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Buy Now Confirmation Screen ──────────────────────────────────────────────
+function BuyNowSuccess({ order, onClose }) {
+  return (
+    <div className="mp-modal-overlay" role="dialog" aria-modal="true">
+      <div className="mp-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="mp-modal-icon">🎉</div>
+        <h2 className="mp-modal-title">Order Placed!</h2>
+        <p className="mp-modal-body">
+          Order <strong>#{order.orderNumber}</strong> has been placed.<br />
+          Total: <strong>${order.total?.toFixed(2)}</strong>
+        </p>
+        <div className="mp-modal-actions">
+          <button className="mp-modal-btn-primary" onClick={onClose}>Continue Shopping</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Star Rating ──────────────────────────────────────────────────────────────
 function StarRating({ rating }) {
   return (
@@ -85,7 +168,7 @@ function StarRating({ rating }) {
 }
 
 // ─── Product Card ─────────────────────────────────────────────────────────────
-function ProductCard({ product, qty, onAdd, onRemove, onViewDetails }) {
+function ProductCard({ product, qty, onAdd, onRemove, onViewDetails, onBuyNow }) {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
@@ -165,7 +248,7 @@ function ProductCard({ product, qty, onAdd, onRemove, onViewDetails }) {
           )}
         </div>
 
-        {/* Quantity stepper or Add button */}
+        {/* Quantity stepper or Add + Buy Now buttons */}
         {qty > 0 ? (
           <div className="mp-qty-row">
             <button className="mp-qty-btn" onClick={() => onRemove(product.id)} aria-label="Remove one">−</button>
@@ -187,6 +270,13 @@ function ProductCard({ product, qty, onAdd, onRemove, onViewDetails }) {
             Add to Cart
           </button>
         )}
+        <button
+          className="mp-buy-now-btn"
+          onClick={() => onBuyNow(product)}
+          aria-label={`Buy ${product.name} now`}
+        >
+          Buy Now
+        </button>
       </div>
     </div>
   );
@@ -240,7 +330,7 @@ function PriceBar({ label, price, ssayePrice, maxPrice, isSSaye }) {
 }
 
 // ─── Product Detail Modal ─────────────────────────────────────────────────────
-function ProductDetailModal({ product, qty, onAdd, onRemove, onClose }) {
+function ProductDetailModal({ product, qty, onAdd, onRemove, onClose, onBuyNow }) {
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
@@ -331,6 +421,9 @@ function ProductDetailModal({ product, qty, onAdd, onRemove, onClose }) {
                   🛒 Add to Cart
                 </button>
               )}
+              <button className="mp-buy-now-btn pd-buy-now-btn" onClick={() => onBuyNow(product)}>
+                Buy Now
+              </button>
               {qty > 0 && <span className="pd-in-cart">{qty} in cart</span>}
             </div>
           </div>
@@ -644,9 +737,58 @@ function CartPage({ cart, products, onAdd, onRemove, onClearItem, onBack, onChec
   );
 }
 
+// ─── Suggested For You strip ──────────────────────────────────────────────────
+function SuggestedForYou({ products, cart, onAdd, onRemove, onViewDetails, onBuyNow }) {
+  if (!products || products.length === 0) return null;
+
+  return (
+    <div className="mp-suggestions">
+      <div className="mp-suggestions-header">
+        <span className="mp-suggestions-icon">✨</span>
+        <h2 className="mp-suggestions-title">Suggested For You</h2>
+        <span className="mp-suggestions-sub">Based on your searches &amp; purchases</span>
+      </div>
+      <div className="mp-suggestions-track">
+        {products.map((p) => {
+          const qty = cart[p.id] || 0;
+          const discount = p.originalPrice
+            ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
+            : null;
+          return (
+            <div key={p.id} className="mp-sug-card">
+              <div className="mp-sug-img" onClick={() => onViewDetails(p)}>
+                {discount && <span className="mp-badge mp-badge-sale mp-sug-badge">{discount}% OFF</span>}
+                {p.imageUrl
+                  ? <img src={p.imageUrl} alt={p.name} className="mp-product-img" onError={(e) => { e.currentTarget.style.display='none'; }} />
+                  : <span className="mp-emoji" role="img" aria-label={p.name}>{p.emoji}</span>
+                }
+              </div>
+              <div className="mp-sug-body">
+                <p className="mp-brand">{p.brand}</p>
+                <p className="mp-sug-name" onClick={() => onViewDetails(p)}>{p.name}</p>
+                <p className="mp-sug-price">${p.price.toFixed(2)}</p>
+                {qty > 0 ? (
+                  <div className="mp-qty-row mp-sug-qty">
+                    <button className="mp-qty-btn" onClick={() => onRemove(p.id)}>−</button>
+                    <span className="mp-qty-count">{qty}</span>
+                    <button className="mp-qty-btn mp-qty-btn--add" onClick={() => onAdd(p)}>+</button>
+                  </div>
+                ) : (
+                  <button className="mp-sug-add" onClick={() => onAdd(p)}>Add to Cart</button>
+                )}
+                <button className="mp-buy-now-btn mp-sug-buynow" onClick={() => onBuyNow(p)}>Buy Now</button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 function Marketplace() {
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, token } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [activeCategory,    setActiveCategory]    = useState("All Products");
@@ -655,7 +797,9 @@ function Marketplace() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [showCart,          setShowCart]          = useState(false);
   const [showLoginPrompt,   setShowLoginPrompt]   = useState(false);
-  const [detailProduct,     setDetailProduct]     = useState(null); // product detail modal
+  const [detailProduct,     setDetailProduct]     = useState(null);
+  const [buyNowProduct,     setBuyNowProduct]     = useState(null);
+  const [buyNowOrder,       setBuyNowOrder]       = useState(null);
 
   // cart: { [productId]: quantity }
   const [cart, setCart] = useState({});
@@ -664,20 +808,49 @@ function Marketplace() {
   const [loadingProds, setLoadingProds] = useState(true);
   const [prodError,    setProdError]    = useState(null);
 
+  const [suggestions, setSuggestions] = useState([]);
+
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+
+  // Fetch all products once on mount
   useEffect(() => {
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     fetch(`${API_URL}/api/products`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
-          setProducts(data.products);
-        } else {
-          setProdError('Failed to load products.');
-        }
+        if (data.success) setProducts(data.products);
+        else setProdError('Failed to load products.');
       })
       .catch(() => setProdError('Could not connect to the server.'))
       .finally(() => setLoadingProds(false));
-  }, []);
+  }, [API_URL]);
+
+  // Fetch recommendations whenever auth state changes (login / logout)
+  useEffect(() => {
+    if (!isAuthenticated() || !token) {
+      setSuggestions([]);
+      return;
+    }
+    fetch(`${API_URL}/api/recommendations`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setSuggestions(d.products); })
+      .catch(() => {});
+  }, [token, API_URL]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounce search recording — fire after user stops typing for 1.5 s
+  const searchDebounceRef = useRef(null);
+  const recordSearch = (keyword) => {
+    if (!isAuthenticated() || !token || !keyword.trim()) return;
+    clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      fetch(`${API_URL}/api/products/search-activity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ keyword: keyword.trim() }),
+      }).catch(() => {});
+    }, 1500);
+  };
 
   const addToCart = (product) => {
     if (!isAuthenticated()) {
@@ -708,6 +881,14 @@ function Marketplace() {
   };
 
   const clearCart = () => setCart({});
+
+  const handleBuyNow = (product) => {
+    if (!isAuthenticated()) {
+      setShowLoginPrompt(true);
+      return;
+    }
+    setBuyNowProduct({ product, quantity: 1 });
+  };
 
   const totalQty = Object.values(cart).reduce((s, q) => s + q, 0);
 
@@ -848,6 +1029,18 @@ function Marketplace() {
 
         {/* ── Main Grid ── */}
         <main className="mp-main">
+          {/* Suggestions strip — only shown when not actively filtering */}
+          {!searchQuery && activeCategory === "All Products" && (
+            <SuggestedForYou
+              products={suggestions}
+              cart={cart}
+              onAdd={addToCart}
+              onRemove={removeFromCart}
+              onViewDetails={setDetailProduct}
+              onBuyNow={handleBuyNow}
+            />
+          )}
+
           <div className="mp-toolbar">
             {/* Search bar — left side */}
             <div className="mp-toolbar-search">
@@ -857,7 +1050,7 @@ function Marketplace() {
                 className="mp-toolbar-search-input"
                 placeholder="Search products…"
                 value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setActiveCategory("All Products"); }}
+                onChange={(e) => { setSearchQuery(e.target.value); setActiveCategory("All Products"); recordSearch(e.target.value); }}
               />
               {searchQuery && (
                 <button
@@ -938,6 +1131,7 @@ function Marketplace() {
                   onAdd={addToCart}
                   onRemove={removeFromCart}
                   onViewDetails={setDetailProduct}
+                  onBuyNow={handleBuyNow}
                 />
               ))}
             </div>
@@ -953,6 +1147,23 @@ function Marketplace() {
           onAdd={addToCart}
           onRemove={removeFromCart}
           onClose={() => setDetailProduct(null)}
+          onBuyNow={(p) => { setDetailProduct(null); handleBuyNow(p); }}
+        />
+      )}
+
+      {buyNowProduct && !buyNowOrder && (
+        <BuyNowModal
+          product={buyNowProduct.product}
+          quantity={buyNowProduct.quantity}
+          onClose={() => setBuyNowProduct(null)}
+          onSuccess={(order) => { setBuyNowProduct(null); setBuyNowOrder(order); }}
+        />
+      )}
+
+      {buyNowOrder && (
+        <BuyNowSuccess
+          order={buyNowOrder}
+          onClose={() => setBuyNowOrder(null)}
         />
       )}
     </div>

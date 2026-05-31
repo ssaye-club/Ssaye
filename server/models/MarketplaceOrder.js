@@ -50,15 +50,10 @@ const marketplaceOrderSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Auto-generate order number before saving (ORD-001, ORD-002 …)
-marketplaceOrderSchema.pre('save', async function (next) {
-  if (this.orderNumber) return next();
-  try {
-    const count = await mongoose.model('MarketplaceOrder').countDocuments();
-    this.orderNumber = `ORD-${String(count + 1).padStart(3, '0')}`;
-    next();
-  } catch (err) {
-    next(err);
-  }
+marketplaceOrderSchema.pre('save', async function () {
+  if (this.orderNumber) return;
+  const count = await mongoose.model('MarketplaceOrder').countDocuments();
+  this.orderNumber = `ORD-${String(count + 1).padStart(3, '0')}`;
 });
 
 module.exports = mongoose.model('MarketplaceOrder', marketplaceOrderSchema);

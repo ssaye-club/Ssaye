@@ -28,6 +28,7 @@ const chatRoutes = require('./routes/chat');
 const productRoutes = require('./routes/products');
 const marketplaceOrderRoutes = require('./routes/marketplaceOrders');
 const productCompareRoutes   = require('./routes/productCompare');
+const recommendationRoutes   = require('./routes/recommendations');
 app.use('/api/auth', authRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/superadmin', superAdminRoutes);
@@ -37,6 +38,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/marketplace-orders', marketplaceOrderRoutes);
 app.use('/api/compare', productCompareRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 // Basic routes
 app.get('/api/health', (req, res) => {

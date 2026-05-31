@@ -1,6 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const MarketplaceOrder = require('../models/MarketplaceOrder');
+const UserActivity         = require('../models/UserActivity');
 const authMiddleware       = require('../middleware/auth');
 const superAdminMiddleware = require('../middleware/superAdmin');
 
@@ -43,6 +44,25 @@ router.post('/', authMiddleware, async (req, res) => {
     });
 
     await order.save();
+
+    // Record purchases in user activity (fire-and-forget — don't block the response)
+    UserActivity.findOneAndUpdate(
+      { user: req.user.userId },
+      {
+        $push: {
+          purchases: {
+            $each: enrichedItems.map((i) => ({
+              productId:   i.productId,
+              name:        i.name,
+              category:    i.category,
+              purchasedAt: new Date(),
+            })),
+            $slice: -100, // keep only the 100 most recent purchases
+          },
+        },
+      },
+      { upsert: true }
+    ).catch((e) => console.error('UserActivity purchase record error:', e.message));
 
     res.status(201).json({ success: true, order });
   } catch (error) {
