@@ -20,6 +20,7 @@ import SuperAdmin from './pages/SuperAdmin';
 import Premium from './pages/Premium';
 import Settings from './pages/Settings';
 import Marketplace from './pages/Marketplace';
+import ProductDetail from './pages/ProductDetail';
 import MarketplaceManager from './pages/MarketplaceManager';
 import './App.css';
 
@@ -37,6 +38,7 @@ function App() {
               <Route path="/assets" element={<Assets />} />
               <Route path="/smart-city" element={<SmartCity />} />
               <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/farms" element={<Farms />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/login" element={<Login />} />

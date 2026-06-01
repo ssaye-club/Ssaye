@@ -1,0 +1,366 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+.pdp-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Loading / error full-page states ──────────────────────────────────────── */
+.pdp-loading-full,
+.pdp-error-full {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.pdp-error-full span { font-size: 2.5rem; }
+
+.pdp-error-full button {
+  margin-top: 8px;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ── Top bar ────────────────────────────────────────────────────────────────── */
+.pdp-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 32px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.pdp-back-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 6px 0;
+  transition: color 0.2s ease;
+}
+
+.pdp-back-btn:hover { color: #4f46e5; }
+
+.pdp-cart-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 10px rgba(102,126,234,0.3);
+}
+
+.pdp-cart-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(102,126,234,0.45);
+}
+
+.pdp-cart-badge {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #f97316;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
+/* ── Content wrapper ────────────────────────────────────────────────────────── */
+.pdp-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 20px 60px;
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+/* ── Sidebar overrides for product detail page ──────────────────────────────── */
+.pdp-sidebar {
+  flex-shrink: 0;
+  width: 260px;
+  position: sticky;
+  top: 72px; /* below the topbar */
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+}
+
+/* ── Main scrollable area ───────────────────────────────────────────────────── */
+.pdp-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────────────── */
+.pdp-hero {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  background: white;
+  border-radius: 20px;
+  padding: 36px 40px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  margin-bottom: 28px;
+}
+
+.pdp-hero-img-wrap {
+  flex-shrink: 0;
+  width: 240px;
+  height: 240px;
+  background: #f8fafc;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.pdp-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 16px;
+}
+
+.pdp-hero-emoji {
+  font-size: 6rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+}
+
+.pdp-hero-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pdp-brand {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.pdp-name {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.pdp-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pdp-reviews {
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.pdp-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pdp-price {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.pdp-original {
+  font-size: 1.1rem;
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.pdp-discount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+/* ── Detail chips ──────────────────────────────────────────────────────────── */
+.pdp-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pdp-chip {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.pdp-chip--green { background: #dcfce7; color: #15803d; }
+.pdp-chip--amber { background: #fef3c7; color: #92400e; }
+.pdp-chip--red   { background: #fee2e2; color: #b91c1c; }
+
+/* ── Action buttons ────────────────────────────────────────────────────────── */
+.pdp-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.pdp-add-btn {
+  padding: 13px 28px;
+  border: none;
+  border-radius: 10px;
+  background: #667eea;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.2px;
+}
+
+.pdp-add-btn:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.pdp-buynow-btn {
+  padding: 13px 28px;
+  border: 2px solid #f59e0b;
+  border-radius: 10px;
+  background: transparent;
+  color: #b45309;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.pdp-buynow-btn:hover {
+  background: #f59e0b;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.pdp-qty-row {
+  transform: scale(1.05);
+  transform-origin: left center;
+}
+
+.pdp-in-cart {
+  font-size: 0.82rem;
+  color: #667eea;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ── Sections ───────────────────────────────────────────────────────────────── */
+.pdp-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Reuse pd-section from Marketplace.css — override background for standalone page */
+.pdp-sections .pd-section {
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .pdp-topbar { padding: 12px 16px; }
+
+  .pdp-content {
+    flex-direction: column;
+    padding: 12px 12px 60px;
+    gap: 0;
+  }
+
+  /* On mobile the sidebar sits above the main content, not beside it */
+  .pdp-sidebar {
+    position: static;
+    width: 100%;
+    max-height: none;
+    overflow-y: visible;
+    margin-bottom: 16px;
+  }
+
+  .pdp-hero {
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 20px;
+    gap: 24px;
+    text-align: center;
+  }
+
+  .pdp-hero-img-wrap {
+    width: 180px;
+    height: 180px;
+  }
+
+  .pdp-name { font-size: 1.4rem; }
+  .pdp-price { font-size: 1.8rem; }
+
+  .pdp-meta { justify-content: center; }
+  .pdp-price-row { justify-content: center; }
+  .pdp-detail-chips { justify-content: center; }
+  .pdp-actions { justify-content: center; }
+}
+
+@media (max-width: 480px) {
+  .pdp-hero-img-wrap { width: 140px; height: 140px; }
+  .pdp-name { font-size: 1.2rem; }
+  .pdp-add-btn, .pdp-buynow-btn { padding: 11px 20px; font-size: 0.9rem; }
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { lockScroll, unlockScroll } from '../utils/scrollLock';
@@ -9,6 +9,8 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [livingOpen, setLivingOpen] = useState(false);
+  const livingRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useContext(AuthContext);
@@ -58,6 +60,16 @@ function Navbar() {
   const toggleUserMenu = () => {
     setUserMenuOpen(!userMenuOpen);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (livingRef.current && !livingRef.current.contains(e.target)) {
+        setLivingOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <nav className={`navbar ${scrolled ? 'navbar-scrolled' : ''}`}>
@@ -115,17 +127,35 @@ function Navbar() {
                   </svg>
                 </Link>
               </li>
-              <li className="navbar-item">
-                <Link
-                  to="/marketplace"
-                  className={`navbar-link ${isActive('/marketplace') ? 'active' : ''}`}
-                  onClick={closeMobileMenu}
+              <li className="navbar-item navbar-item--has-dropdown" ref={livingRef}>
+                <button
+                  className={`navbar-link navbar-link--dropdown-trigger ${isActive('/marketplace') ? 'active' : ''}`}
+                  onClick={() => setLivingOpen(!livingOpen)}
+                  aria-haspopup="true"
+                  aria-expanded={livingOpen}
                 >
-                  <span>Marketplace</span>
+                  <span>Living</span>
+                  <svg className={`nav-chevron ${livingOpen ? 'nav-chevron--open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
                   <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M9 18l6-6-6-6"/>
                   </svg>
-                </Link>
+                </button>
+                {livingOpen && (
+                  <ul className="nav-dropdown">
+                    <li>
+                      <Link
+                        to="/marketplace"
+                        className={`nav-dropdown-item ${isActive('/marketplace') ? 'nav-dropdown-item--active' : ''}`}
+                        onClick={() => { setLivingOpen(false); closeMobileMenu(); }}
+                      >
+                        <span className="nav-dropdown-icon">🛒</span>
+                        <span>Marketplace</span>
+                      </Link>
+                    </li>
+                  </ul>
+                )}
               </li>
               <li className="navbar-item">
                 <Link

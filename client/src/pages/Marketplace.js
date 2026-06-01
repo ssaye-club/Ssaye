@@ -282,303 +282,6 @@ function ProductCard({ product, qty, onAdd, onRemove, onViewDetails, onBuyNow })
   );
 }
 
-// ─── Verdict config ────────────────────────────────────────────────────────────
-const VERDICT_CONFIG = {
-  great_deal:  { label: '🔥 Great Deal',    cls: 'pd-verdict--great',  bar: '#10b981' },
-  good_value:  { label: '👍 Good Value',    cls: 'pd-verdict--good',   bar: '#3b82f6' },
-  market_rate: { label: '📊 Market Rate',   cls: 'pd-verdict--market', bar: '#f59e0b' },
-};
-
-// ─── Nutrient bar ──────────────────────────────────────────────────────────────
-function NutrientBar({ label, value, unit, max, color }) {
-  const pct = Math.min(100, Math.round((value / max) * 100));
-  return (
-    <div className="pd-nutrient-row">
-      <span className="pd-nutrient-label">{label}</span>
-      <div className="pd-nutrient-track">
-        <div className="pd-nutrient-fill" style={{ width: `${pct}%`, background: color }} />
-      </div>
-      <span className="pd-nutrient-val">{value != null ? `${value}${unit}` : '—'}</span>
-    </div>
-  );
-}
-
-// ─── Price comparison bar ──────────────────────────────────────────────────────
-function PriceBar({ label, price, ssayePrice, maxPrice, isSSaye }) {
-  const pct = Math.min(100, Math.round((price / maxPrice) * 100));
-  const cheaper = !isSSaye && price > ssayePrice;
-  return (
-    <div className={`pd-price-row ${isSSaye ? 'pd-price-row--ssaye' : ''}`}>
-      <span className="pd-price-source">{label}</span>
-      <div className="pd-price-track">
-        <div
-          className="pd-price-fill"
-          style={{
-            width: `${pct}%`,
-            background: isSSaye
-              ? 'linear-gradient(90deg, #667eea, #764ba2)'
-              : cheaper ? '#94a3b8' : '#64748b',
-          }}
-        />
-      </div>
-      <span className={`pd-price-val ${isSSaye ? 'pd-price-val--ssaye' : ''}`}>
-        ${price.toFixed(2)}
-        {cheaper && <span className="pd-price-diff"> +${(price - ssayePrice).toFixed(2)}</span>}
-      </span>
-    </div>
-  );
-}
-
-// ─── Product Detail Modal ─────────────────────────────────────────────────────
-function ProductDetailModal({ product, qty, onAdd, onRemove, onClose, onBuyNow }) {
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-  const [data,    setData]    = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(null);
-
-  // Fetch comparison data when modal mounts
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    fetch(`${API_URL}/api/compare/${product.id}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) setData(d);
-        else setError('Could not load comparison data.');
-      })
-      .catch(() => setError('Could not reach the server.'))
-      .finally(() => setLoading(false));
-  }, [product.id, API_URL]);
-
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [onClose]);
-
-  // Lock body scroll
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, []);
-
-  const comparison   = data?.comparison;
-  const off          = comparison?.openFoodFacts;
-  const marketPrices = comparison?.marketPrices ?? [];
-  const verdictCfg   = comparison ? (VERDICT_CONFIG[comparison.verdict] ?? VERDICT_CONFIG.market_rate) : null;
-  const maxPrice     = comparison
-    ? Math.max(...marketPrices.map((m) => m.price), comparison.ssayePrice) * 1.05
-    : 1;
-
-  const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : null;
-
-  // Nutriscore grade colours
-  const nutriColors = { a: '#21a55a', b: '#84bb2f', c: '#f5ce42', d: '#ee8100', e: '#e63312' };
-  const nutriGrade  = off?.nutriscoreGrade?.toLowerCase();
-
-  return (
-    <div className="pd-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Details for ${product.name}`}>
-      <div className="pd-panel" onClick={(e) => e.stopPropagation()}>
-
-        {/* ── Close ── */}
-        <button className="pd-close" onClick={onClose} aria-label="Close">✕</button>
-
-        {/* ── Product hero ── */}
-        <div className="pd-hero">
-          <div className="pd-hero-emoji">{product.emoji}</div>
-          <div className="pd-hero-info">
-            <p className="pd-hero-brand">{product.brand.toUpperCase()}</p>
-            <h2 className="pd-hero-name">{product.name}</h2>
-            <div className="pd-hero-meta">
-              <StarRating rating={product.rating} />
-              <span className="pd-review-count">({product.reviews.toLocaleString()} reviews)</span>
-              {product.badge && (
-                <span className={`mp-badge mp-badge-${product.badge.toLowerCase()} pd-badge`}>
-                  {product.badge === 'Low' ? 'Low Stock' : product.badge}
-                </span>
-              )}
-            </div>
-            <div className="pd-hero-price-row">
-              <span className="pd-hero-price">${product.price.toFixed(2)}</span>
-              {product.originalPrice && (
-                <span className="pd-hero-original">${product.originalPrice.toFixed(2)}</span>
-              )}
-              {discount && <span className="pd-hero-discount">{discount}% OFF</span>}
-            </div>
-            {/* Cart controls */}
-            <div className="pd-cart-row">
-              {qty > 0 ? (
-                <div className="mp-qty-row pd-qty-row">
-                  <button className="mp-qty-btn" onClick={() => onRemove(product.id)} aria-label="Remove one">−</button>
-                  <span className="mp-qty-count">{qty}</span>
-                  <button className="mp-qty-btn mp-qty-btn--add" onClick={() => onAdd(product)} aria-label="Add one more">+</button>
-                </div>
-              ) : (
-                <button className="pd-add-btn" onClick={() => onAdd(product)}>
-                  🛒 Add to Cart
-                </button>
-              )}
-              <button className="mp-buy-now-btn pd-buy-now-btn" onClick={() => onBuyNow(product)}>
-                Buy Now
-              </button>
-              {qty > 0 && <span className="pd-in-cart">{qty} in cart</span>}
-            </div>
-          </div>
-        </div>
-
-        {/* ── Body ── */}
-        <div className="pd-body">
-          {loading && (
-            <div className="pd-loading">
-              <div className="mp-spinner" />
-              <p>Fetching live market prices…</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="pd-error">
-              <span>⚠️</span> {error}
-            </div>
-          )}
-
-          {!loading && !error && comparison && (
-            <>
-              {/* ── Verdict banner ── */}
-              <div className={`pd-verdict ${verdictCfg.cls}`}>
-                <span className="pd-verdict-label">{verdictCfg.label}</span>
-                <span className="pd-verdict-text">{comparison.verdictText}</span>
-              </div>
-
-              {/* ── Price comparison chart ── */}
-              <section className="pd-section">
-                <h3 className="pd-section-title">💰 Price Comparison</h3>
-                <p className="pd-section-sub">Ssaye vs. market estimates</p>
-                <div className="pd-price-chart">
-                  {/* Ssaye price first */}
-                  <PriceBar
-                    label="🛒 Ssaye Price"
-                    price={comparison.ssayePrice}
-                    ssayePrice={comparison.ssayePrice}
-                    maxPrice={maxPrice}
-                    isSSaye
-                  />
-                  {marketPrices.map((m) => (
-                    <PriceBar
-                      key={m.source}
-                      label={m.source}
-                      price={m.price}
-                      ssayePrice={comparison.ssayePrice}
-                      maxPrice={maxPrice}
-                      isSSaye={false}
-                    />
-                  ))}
-                </div>
-                {comparison.savings > 0 && (
-                  <div className="pd-savings-banner">
-                    <span className="pd-savings-icon">💸</span>
-                    <span>
-                      Save <strong>${comparison.savings.toFixed(2)}</strong> ({comparison.savingsPct}%) buying from Ssaye vs. retail
-                    </span>
-                  </div>
-                )}
-                {/* Google-scraped prices if any */}
-                {comparison.googlePrices?.length > 0 && (
-                  <div className="pd-google-prices">
-                    <p className="pd-google-title">🔍 Prices found online</p>
-                    <div className="pd-google-chips">
-                      {[...new Set(comparison.googlePrices)].slice(0, 6).map((p, i) => (
-                        <span key={i} className="pd-google-chip">{p}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              {/* ── Open Food Facts data ── */}
-              {off?.found && (
-                <section className="pd-section">
-                  <h3 className="pd-section-title">🥗 Nutritional Intelligence</h3>
-                  <p className="pd-section-sub">Data sourced from Open Food Facts</p>
-                  <div className="pd-off-grid">
-                    {/* Nutriscore */}
-                    {nutriGrade && (
-                      <div className="pd-nutriscore">
-                        <p className="pd-nutriscore-label">Nutri-Score</p>
-                        <div
-                          className="pd-nutriscore-badge"
-                          style={{ background: nutriColors[nutriGrade] ?? '#94a3b8' }}
-                        >
-                          {nutriGrade.toUpperCase()}
-                        </div>
-                      </div>
-                    )}
-                    {/* Product info */}
-                    <div className="pd-off-info">
-                      {off.productName && <p><strong>Matched product:</strong> {off.productName}</p>}
-                      {off.brands      && <p><strong>Brand(s):</strong> {off.brands}</p>}
-                      {off.quantity    && <p><strong>Quantity:</strong> {off.quantity}</p>}
-                      {off.stores      && <p><strong>Sold at:</strong> {off.stores}</p>}
-                    </div>
-                  </div>
-
-                  {/* Nutrients */}
-                  {off.nutriments && Object.keys(off.nutriments).length > 0 && (
-                    <div className="pd-nutrients">
-                      <p className="pd-nutrients-title">Per 100g</p>
-                      <NutrientBar label="Energy"  value={off.nutriments['energy-kcal_100g']} unit=" kcal" max={600}  color="#f97316" />
-                      <NutrientBar label="Protein" value={off.nutriments['proteins_100g']}    unit="g"     max={50}   color="#3b82f6" />
-                      <NutrientBar label="Carbs"   value={off.nutriments['carbohydrates_100g']} unit="g"   max={100}  color="#f59e0b" />
-                      <NutrientBar label="Fat"     value={off.nutriments['fat_100g']}          unit="g"    max={50}   color="#ef4444" />
-                      <NutrientBar label="Fibre"   value={off.nutriments['fiber_100g']}        unit="g"    max={20}   color="#10b981" />
-                      <NutrientBar label="Salt"    value={off.nutriments['salt_100g']}         unit="g"    max={5}    color="#8b5cf6" />
-                    </div>
-                  )}
-                </section>
-              )}
-
-              {/* ── No OFF match ── */}
-              {off && !off.found && (
-                <section className="pd-section pd-section--muted">
-                  <h3 className="pd-section-title">🥗 Nutritional Data</h3>
-                  <p className="pd-no-data">No nutritional data found in the Open Food Facts database for this product.</p>
-                </section>
-              )}
-
-              {/* ── Product details ── */}
-              <section className="pd-section">
-                <h3 className="pd-section-title">📋 Product Details</h3>
-                <div className="pd-details-grid">
-                  <div className="pd-detail-item">
-                    <span className="pd-detail-key">Category</span>
-                    <span className="pd-detail-val">{product.category}</span>
-                  </div>
-                  <div className="pd-detail-item">
-                    <span className="pd-detail-key">Brand</span>
-                    <span className="pd-detail-val">{product.brand}</span>
-                  </div>
-                  <div className="pd-detail-item">
-                    <span className="pd-detail-key">Stock</span>
-                    <span className="pd-detail-val" style={{ color: product.stock === 'Low' ? '#f59e0b' : product.stock === 'Out of Stock' ? '#ef4444' : '#10b981' }}>
-                      {product.stock}
-                    </span>
-                  </div>
-                  <div className="pd-detail-item">
-                    <span className="pd-detail-key">Rating</span>
-                    <span className="pd-detail-val">{product.rating} / 5 ⭐</span>
-                  </div>
-                </div>
-              </section>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Cart Page ────────────────────────────────────────────────────────────────
 function CartPage({ cart, products, onAdd, onRemove, onClearItem, onBack, onCheckoutSuccess }) {
   const { token } = useContext(AuthContext);
@@ -787,6 +490,9 @@ function SuggestedForYou({ products, cart, onAdd, onRemove, onViewDetails, onBuy
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+function readCart()      { try { return JSON.parse(localStorage.getItem('ssaye_cart') || '{}'); } catch { return {}; } }
+function writeCart(cart) { localStorage.setItem('ssaye_cart', JSON.stringify(cart)); }
+
 function Marketplace() {
   const { isAuthenticated, token } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -797,12 +503,11 @@ function Marketplace() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [showCart,          setShowCart]          = useState(false);
   const [showLoginPrompt,   setShowLoginPrompt]   = useState(false);
-  const [detailProduct,     setDetailProduct]     = useState(null);
   const [buyNowProduct,     setBuyNowProduct]     = useState(null);
   const [buyNowOrder,       setBuyNowOrder]       = useState(null);
 
-  // cart: { [productId]: quantity }
-  const [cart, setCart] = useState({});
+  // cart: { [productId]: quantity } — persisted in localStorage so ProductDetail page shares it
+  const [cart, setCart] = useState(readCart);
 
   const [products,     setProducts]     = useState([]);
   const [loadingProds, setLoadingProds] = useState(true);
@@ -811,6 +516,24 @@ function Marketplace() {
   const [suggestions, setSuggestions] = useState([]);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+
+  // Persist cart to localStorage whenever it changes
+  useEffect(() => { writeCart(cart); }, [cart]);
+
+  // Read ?cart=1 and ?category=X query params set by ProductDetail page
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('cart') === '1') {
+      setShowCart(true);
+    }
+    const cat = params.get('category');
+    if (cat && CATEGORIES.includes(cat)) {
+      setActiveCategory(cat);
+    }
+    if (params.toString()) {
+      window.history.replaceState({}, '', '/marketplace');
+    }
+  }, []);
 
   // Fetch all products once on mount
   useEffect(() => {
@@ -931,7 +654,6 @@ function Marketplace() {
       <div className="mp-page">
         <section className="mp-hero">
           <div className="mp-hero-content">
-            <p className="mp-hero-eyebrow">Ssaye Club · Grocery</p>
             <h1 className="mp-hero-title">SSAYE GROCERY CLUB</h1>
             <p className="mp-hero-tagline">Empowering communities through authentic South Asian flavours</p>
             <p className="mp-hero-subtitle">
@@ -973,7 +695,6 @@ function Marketplace() {
       {/* ── Hero ── */}
       <section className="mp-hero">
         <div className="mp-hero-content">
-          <p className="mp-hero-eyebrow">Ssaye Club · Grocery</p>
           <h1 className="mp-hero-title">SSAYE GROCERY CLUB</h1>
           <p className="mp-hero-tagline">Empowering communities through authentic South Asian flavours</p>
           <p className="mp-hero-subtitle">
@@ -994,6 +715,11 @@ function Marketplace() {
         >
           {mobileFiltersOpen ? "✕ Close Filters" : "☰ Categories"}
         </button>
+
+        {/* Backdrop — closes sidebar when tapping outside on mobile */}
+        {mobileFiltersOpen && (
+          <div className="mp-sidebar-backdrop" onClick={() => setMobileFiltersOpen(false)} aria-hidden="true" />
+        )}
 
         {/* ── Sidebar ── */}
         <aside className={`mp-sidebar ${mobileFiltersOpen ? "mp-sidebar--open" : ""}`}>
@@ -1036,7 +762,7 @@ function Marketplace() {
               cart={cart}
               onAdd={addToCart}
               onRemove={removeFromCart}
-              onViewDetails={setDetailProduct}
+              onViewDetails={(p) => navigate(`/product/${p.id}`)}
               onBuyNow={handleBuyNow}
             />
           )}
@@ -1130,7 +856,7 @@ function Marketplace() {
                   qty={cart[p.id] || 0}
                   onAdd={addToCart}
                   onRemove={removeFromCart}
-                  onViewDetails={setDetailProduct}
+                  onViewDetails={(p) => navigate(`/product/${p.id}`)}
                   onBuyNow={handleBuyNow}
                 />
               ))}
@@ -1139,17 +865,6 @@ function Marketplace() {
         </main>
       </div>
 
-      {/* ── Product Detail / Compare Modal ── */}
-      {detailProduct && (
-        <ProductDetailModal
-          product={detailProduct}
-          qty={cart[detailProduct.id] || 0}
-          onAdd={addToCart}
-          onRemove={removeFromCart}
-          onClose={() => setDetailProduct(null)}
-          onBuyNow={(p) => { setDetailProduct(null); handleBuyNow(p); }}
-        />
-      )}
 
       {buyNowProduct && !buyNowOrder && (
         <BuyNowModal

@@ -1030,24 +1030,39 @@
   .mp-cart-layout { grid-template-columns: 1fr 300px; }
 }
 
+/* ── Mobile sidebar backdrop ─────────────────────────────────────────────── */
+.mp-sidebar-backdrop {
+  display: none;
+}
+
 @media screen and (max-width: 768px) {
-  .mp-hero { padding: 40px 20px 36px; }
-  .mp-hero-title { font-size: 1.7rem; letter-spacing: 2.5px; }
-  .mp-hero-tagline { font-size: 0.88rem; }
-  .mp-hero-subtitle { font-size: 0.82rem; }
+  .mp-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 9998;
+    animation: mp-overlay-in 0.2s ease;
+  }
+
+  .mp-hero { padding: 16px 16px 12px; }
+  .mp-hero-title { font-size: 1.3rem; letter-spacing: 2px; }
+  .mp-hero-tagline { font-size: 0.8rem; }
+  .mp-hero-subtitle { display: none; }
 
   /* On mobile the columns stack — revert to normal page scroll */
   .mp-layout {
     flex-direction: column;
-    padding: 24px 16px 40px;
+    padding: 12px 12px 40px;
     gap: 0;
-    height: auto;
+    height: auto !important;
+    min-height: unset;
     overflow: visible;
   }
 
   .mp-main {
-    overflow: visible;
-    height: auto;
+    overflow: visible !important;
+    height: auto !important;
     padding-bottom: 40px;
   }
 
@@ -1461,6 +1476,22 @@
   font-size: 5rem;
   line-height: 1;
   flex-shrink: 0;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.pd-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
 }
 
