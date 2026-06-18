@@ -1,6 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const UserActivity   = require('../models/UserActivity');
+const Wishlist       = require('../models/Wishlist');
 const Product        = require('../models/Product');
 const authMiddleware = require('../middleware/auth');
 
@@ -9,11 +10,18 @@ const authMiddleware = require('../middleware/auth');
 // searches and purchases.  Requires login.
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const activity = await UserActivity.findOne({ user: req.user.userId });
+    const [activity, wishlistItems] = await Promise.all([
+      UserActivity.findOne({ user: req.user.userId }),
+      Wishlist.find({ user: req.user.userId }),
+    ]);
 
-    // No activity yet — return empty so the UI can hide the section
+    const wishlistedIds = new Set(wishlistItems.map(w => w.productId));
+
+    // No activity yet — show wishlisted items only, or empty
     if (!activity || (activity.searches.length === 0 && activity.purchases.length === 0)) {
-      return res.json({ success: true, products: [] });
+      if (wishlistItems.length === 0) return res.json({ success: true, products: [] });
+      const wishlistProds = await Product.find({ id: { $in: [...wishlistedIds] } }).lean();
+      return res.json({ success: true, products: wishlistProds.slice(0, 8) });
     }
 
     const allProducts = await Product.find({});
@@ -65,15 +73,18 @@ router.get('/', authMiddleware, async (req, res) => {
       // Slight penalty for already-purchased items (still show, just ranked lower)
       if (purchasedIds.has(prod.id)) score -= 1;
 
+      // Strong boost for wishlisted items — surfaces them prominently when in stock
+      if (wishlistedIds.has(prod.id)) score += 10;
+
       // Boost highly-rated products slightly to surface quality items
       score += prod.rating * 0.2;
 
       return { product: prod, score };
     });
 
-    // Sort descending, drop anything with score <= 0, take top 8
+    // Sort descending; always include wishlisted items, drop others with score <= 0
     const recommendations = scored
-      .filter((s) => s.score > 0)
+      .filter((s) => s.score > 0 || wishlistedIds.has(s.product.id))
       .sort((a, b) => b.score - a.score)
       .slice(0, 8)
       .map((s) => s.product);

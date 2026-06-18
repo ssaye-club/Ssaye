@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import './Marketplace.css';
 
-// Products are fetched from the API — see fetchProducts() in Marketplace()
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 const CATEGORIES = [
   "All Products",
@@ -83,7 +83,7 @@ function BuyNowModal({ product, quantity, onClose, onSuccess }) {
     setPlacing(true);
     setError(null);
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+
       const res = await fetch(`${API_URL}/api/marketplace-orders`, {
         method: 'POST',
         headers: {
@@ -168,7 +168,7 @@ function StarRating({ rating }) {
 }
 
 // ─── Product Card ─────────────────────────────────────────────────────────────
-function ProductCard({ product, qty, onAdd, onRemove, onViewDetails, onBuyNow }) {
+function ProductCard({ product, qty, onAdd, onRemove, onViewDetails, onBuyNow, isWishlisted, onToggleWishlist }) {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
@@ -195,11 +195,12 @@ function ProductCard({ product, qty, onAdd, onRemove, onViewDetails, onBuyNow })
 
         {/* Top-right: wishlist heart */}
         <button
-          className="mp-card-heart"
-          onClick={(e) => e.stopPropagation()}
-          aria-label="Save to wishlist"
+          className={`mp-card-heart${isWishlisted ? ' mp-card-heart--active' : ''}`}
+          onClick={(e) => { e.stopPropagation(); onToggleWishlist(product); }}
+          aria-label={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+          <svg width="18" height="18" viewBox="0 0 24 24"
+            fill={isWishlisted ? 'currentColor' : 'none'}
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
@@ -297,7 +298,7 @@ function CartPage({ cart, products, onAdd, onRemove, onClearItem, onBack, onChec
     setCheckingOut(true);
     setCheckoutError(null);
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+
       const items = cartItems.map((p) => ({
         productId: p.id,
         name:      p.name,
@@ -512,53 +513,181 @@ function Marketplace() {
   const [products,     setProducts]     = useState([]);
   const [loadingProds, setLoadingProds] = useState(true);
   const [prodError,    setProdError]    = useState(null);
+  const [totalCount,   setTotalCount]   = useState(0);
+  const [currentPage,  setCurrentPage]  = useState(1);
+  const [totalPages,   setTotalPages]   = useState(1);
+  const [categoryCounts, setCategoryCounts] = useState({});
 
   const [suggestions, setSuggestions] = useState([]);
-
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  const [fuzzySuggestion, setFuzzySuggestion] = useState(null);
+  const [wishlist, setWishlist] = useState(new Set()); // Set of productIds
 
   // Persist cart to localStorage whenever it changes
   useEffect(() => { writeCart(cart); }, [cart]);
 
+  // Clear in-memory cart immediately when user logs out
+  useEffect(() => {
+    if (!token) setCart({});
+  }, [token]);
+
   // Read ?cart=1 and ?category=X query params set by ProductDetail page
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('cart') === '1') {
-      setShowCart(true);
-    }
+    if (params.get('cart') === '1') setShowCart(true);
     const cat = params.get('category');
-    if (cat && CATEGORIES.includes(cat)) {
-      setActiveCategory(cat);
-    }
-    if (params.toString()) {
-      window.history.replaceState({}, '', '/marketplace');
-    }
-  }, []);
+    if (cat && CATEGORIES.includes(cat)) setActiveCategory(cat);
+    if (params.toString()) window.history.replaceState({}, '', '/marketplace');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch all products once on mount
+  // Fetch one page of products whenever filters/sort/page change
+  const fetchProductsRef = useRef(null);
   useEffect(() => {
-    fetch(`${API_URL}/api/products`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setProducts(data.products);
-        else setProdError('Failed to load products.');
-      })
-      .catch(() => setProdError('Could not connect to the server.'))
-      .finally(() => setLoadingProds(false));
-  }, [API_URL]);
+    setLoadingProds(true);
+    setProdError(null);
+
+    const params = new URLSearchParams({ page: currentPage, limit: 40, sort: sortBy });
+    if (activeCategory !== 'All Products') params.set('category', activeCategory);
+    if (searchQuery.trim()) params.set('search', searchQuery.trim());
+
+    // Debounce: wait 350ms after last change before firing (avoids rapid requests while typing)
+    clearTimeout(fetchProductsRef.current);
+    fetchProductsRef.current = setTimeout(() => {
+      // Helper function with timeout
+      const fetchWithTimeout = (url, timeout = 10000) => {
+        return Promise.race([
+          fetch(url).then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), timeout)
+          ),
+        ]);
+      };
+
+      Promise.all([
+        fetchWithTimeout(`${API_URL}/api/products?${params}`),
+        fetchWithTimeout(`${API_URL}/api/products/category-counts${searchQuery.trim() ? `?search=${encodeURIComponent(searchQuery.trim())}` : ''}`),
+      ])
+        .then(async ([data, catData]) => {
+          if (data && data.success) {
+            setProducts(data.products || []);
+            setTotalCount(data.total || 0);
+            setTotalPages(data.pages || 1);
+            // If no results and user typed a search query, try fuzzy suggestion
+            if (data.total === 0 && searchQuery.trim().length >= 2) {
+              try {
+                const fuzzyRes = await fetchWithTimeout(`${API_URL}/api/products/fuzzy-suggest?q=${encodeURIComponent(searchQuery.trim())}`);
+                setFuzzySuggestion(fuzzyRes.success ? fuzzyRes.suggestion : null);
+              } catch {
+                setFuzzySuggestion(null);
+              }
+            } else {
+              setFuzzySuggestion(null);
+            }
+            setProdError(null);
+          } else {
+            setProdError('Failed to load products. Please try again.');
+            setProducts([]);
+          }
+          if (catData && catData.success && catData.counts) {
+            setCategoryCounts(catData.counts);
+          } else {
+            console.warn('Category counts failed to load:', catData);
+            setCategoryCounts({});
+          }
+        })
+        .catch((error) => {
+          console.error('Products fetch error:', error);
+          setProdError('Could not connect to the server. Please check your connection and try again.');
+          setProducts([]);
+          setCategoryCounts({});
+        })
+        .finally(() => setLoadingProds(false));
+    }, searchQuery.trim() ? 350 : 0);
+
+    return () => clearTimeout(fetchProductsRef.current);
+  }, [activeCategory, searchQuery, sortBy, currentPage, API_URL]);
+
+  // Reset to page 1 whenever filters or sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, searchQuery, sortBy]);
+
+  // Fetch wishlist whenever auth state changes
+  useEffect(() => {
+    if (!isAuthenticated() || !token) { setWishlist(new Set()); return; }
+    fetch(`${API_URL}/api/wishlist`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { if (d.success) setWishlist(new Set(d.items.map(i => i.productId))); })
+      .catch(() => {});
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleWishlist = async (product) => {
+    if (!isAuthenticated()) { setShowLoginPrompt(true); return; }
+    const isWishlisted = wishlist.has(product.id);
+    // Optimistic update
+    setWishlist(prev => {
+      const next = new Set(prev);
+      isWishlisted ? next.delete(product.id) : next.add(product.id);
+      return next;
+    });
+    try {
+      if (isWishlisted) {
+        await fetch(`${API_URL}/api/wishlist/${product.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        await fetch(`${API_URL}/api/wishlist`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            productId: product.id,
+            name: product.name,
+            brand: product.brand,
+            category: product.category,
+            price: product.price,
+            emoji: product.emoji,
+            imageUrl: product.imageUrl || null,
+          }),
+        });
+      }
+    } catch {
+      // Revert optimistic update on failure
+      setWishlist(prev => {
+        const next = new Set(prev);
+        isWishlisted ? next.add(product.id) : next.delete(product.id);
+        return next;
+      });
+    }
+  };
 
   // Fetch recommendations whenever auth state changes (login / logout)
   useEffect(() => {
-    if (!isAuthenticated() || !token) {
-      setSuggestions([]);
-      return;
-    }
-    fetch(`${API_URL}/api/recommendations`, {
+    if (!isAuthenticated() || !token) { setSuggestions([]); return; }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    
+    fetch(`${API_URL}/api/recommendations`, { 
       headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal
     })
-      .then((r) => r.json())
-      .then((d) => { if (d.success) setSuggestions(d.products); })
-      .catch(() => {});
+      .then((r) => {
+        clearTimeout(timeoutId);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((d) => { if (d.success && Array.isArray(d.products)) setSuggestions(d.products); })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        console.warn('Failed to load recommendations:', error);
+      });
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
   }, [token, API_URL]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounce search recording — fire after user stops typing for 1.5 s
@@ -567,86 +696,48 @@ function Marketplace() {
     if (!isAuthenticated() || !token || !keyword.trim()) return;
     clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       fetch(`${API_URL}/api/products/search-activity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ keyword: keyword.trim() }),
-      }).catch(() => {});
+        signal: controller.signal,
+      })
+        .catch((error) => {
+          // Silently fail for analytics endpoint
+          console.debug('Search activity record failed (non-critical):', error);
+        })
+        .finally(() => clearTimeout(timeoutId));
     }, 1500);
   };
 
   const addToCart = (product) => {
-    if (!isAuthenticated()) {
-      setShowLoginPrompt(true);
-      return;
-    }
+    if (!isAuthenticated()) { setShowLoginPrompt(true); return; }
     setCart((prev) => ({ ...prev, [product.id]: (prev[product.id] || 0) + 1 }));
   };
 
   const removeFromCart = (productId) => {
     setCart((prev) => {
       const newQty = (prev[productId] || 0) - 1;
-      if (newQty <= 0) {
-        const next = { ...prev };
-        delete next[productId];
-        return next;
-      }
+      if (newQty <= 0) { const next = { ...prev }; delete next[productId]; return next; }
       return { ...prev, [productId]: newQty };
     });
   };
 
   const clearCartItem = (productId) => {
-    setCart((prev) => {
-      const next = { ...prev };
-      delete next[productId];
-      return next;
-    });
+    setCart((prev) => { const next = { ...prev }; delete next[productId]; return next; });
   };
 
   const clearCart = () => setCart({});
 
   const handleBuyNow = (product) => {
-    if (!isAuthenticated()) {
-      setShowLoginPrompt(true);
-      return;
-    }
+    if (!isAuthenticated()) { setShowLoginPrompt(true); return; }
     setBuyNowProduct({ product, quantity: 1 });
   };
 
   const totalQty = Object.values(cart).reduce((s, q) => s + q, 0);
-
-  const categoryCounts = useMemo(() => {
-    const counts = {};
-    CATEGORIES.forEach((c) => {
-      counts[c] = c === "All Products"
-        ? products.length
-        : products.filter((p) => p.category === c).length;
-    });
-    return counts;
-  }, [products]);
-
-  const filtered = useMemo(() => {
-    let list = products;
-    if (activeCategory !== "All Products") {
-      list = list.filter((p) => p.category === activeCategory);
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.brand.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
-      );
-    }
-    switch (sortBy) {
-      case "price-asc":  return [...list].sort((a, b) => a.price - b.price);
-      case "price-desc": return [...list].sort((a, b) => b.price - a.price);
-      case "rating":     return [...list].sort((a, b) => b.rating - a.rating);
-      case "name":       return [...list].sort((a, b) => a.name.localeCompare(b.name));
-      default:           return [...list].sort((a, b) => b.reviews - a.reviews);
-    }
-  }, [products, activeCategory, searchQuery, sortBy]);
 
   // ── Cart view ──
   if (showCart) {
@@ -790,7 +881,7 @@ function Marketplace() {
             {/* Right side: count + sort + cart */}
             <div className="mp-toolbar-right">
               <p className="mp-count">
-                {filtered.length} product{filtered.length !== 1 ? "s" : ""}
+                {totalCount.toLocaleString()} product{totalCount !== 1 ? "s" : ""}
                 {searchQuery && <span className="mp-search-term"> for "{searchQuery}"</span>}
               </p>
               <div className="mp-sort-wrap">
@@ -824,42 +915,85 @@ function Marketplace() {
             </div>
           </div>
 
-          {loadingProds ? (
-            <div className="mp-loading">
-              <div className="mp-spinner" />
-              <p>Loading products…</p>
-            </div>
-          ) : prodError ? (
+          {prodError ? (
             <div className="mp-empty">
               <span className="mp-empty-icon">⚠️</span>
               <h3>Something went wrong</h3>
               <p>{prodError}</p>
-              <button className="mp-empty-reset" onClick={() => window.location.reload()}>
-                Try Again
-              </button>
+              <button className="mp-empty-reset" onClick={() => window.location.reload()}>Try Again</button>
             </div>
-          ) : filtered.length === 0 ? (
+          ) : !loadingProds && products.length === 0 ? (
             <div className="mp-empty">
               <span className="mp-empty-icon">🛍️</span>
               <h3>No products found</h3>
-              <p>Try a different category or search term</p>
-              <button className="mp-empty-reset" onClick={() => { setSearchQuery(""); setActiveCategory("All Products"); }}>
+              {fuzzySuggestion ? (
+                <p>
+                  Did you mean{' '}
+                  <button
+                    className="mp-fuzzy-suggestion"
+                    onClick={() => { setSearchQuery(fuzzySuggestion); setFuzzySuggestion(null); }}
+                  >
+                    "{fuzzySuggestion}"
+                  </button>
+                  ?
+                </p>
+              ) : (
+                <p>Try a different category or search term</p>
+              )}
+              <button className="mp-empty-reset" onClick={() => { setSearchQuery(""); setActiveCategory("All Products"); setFuzzySuggestion(null); }}>
                 Show All Products
               </button>
             </div>
           ) : (
-            <div className="mp-grid">
-              {filtered.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                  qty={cart[p.id] || 0}
-                  onAdd={addToCart}
-                  onRemove={removeFromCart}
-                  onViewDetails={(p) => navigate(`/product/${p.id}`)}
-                  onBuyNow={handleBuyNow}
-                />
-              ))}
+            <div style={{ opacity: loadingProds ? 0.5 : 1, transition: 'opacity 0.15s' }}>
+              <div className="mp-grid">
+                {products.map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                    qty={cart[p.id] || 0}
+                    onAdd={addToCart}
+                    onRemove={removeFromCart}
+                    onViewDetails={(p) => navigate(`/product/${p.id}`)}
+                    onBuyNow={handleBuyNow}
+                    isWishlisted={wishlist.has(p.id)}
+                    onToggleWishlist={toggleWishlist}
+                  />
+                ))}
+              </div>
+
+              {/* ── Pagination ── */}
+              {totalPages > 1 && (
+                <div className="mp-pagination">
+                  <button
+                    className="mp-page-btn"
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    disabled={currentPage === 1 || loadingProds}
+                  >‹ Prev</button>
+
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+                    return start + i;
+                  }).map(n => (
+                    <button
+                      key={n}
+                      className={`mp-page-btn ${n === currentPage ? 'mp-page-btn--active' : ''}`}
+                      onClick={() => setCurrentPage(n)}
+                      disabled={loadingProds}
+                    >{n}</button>
+                  ))}
+
+                  <button
+                    className="mp-page-btn"
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    disabled={currentPage === totalPages || loadingProds}
+                  >Next ›</button>
+
+                  <span className="mp-page-info">
+                    {totalCount.toLocaleString()} products · page {currentPage}/{totalPages}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </main>

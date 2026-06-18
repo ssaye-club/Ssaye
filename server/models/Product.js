@@ -73,6 +73,11 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    itemNum: {
+      type: String,
+      default: null,
+      index: true,
+    },
   },
   { timestamps: true }
 );

@@ -134,7 +134,7 @@ function Navbar() {
                   aria-haspopup="true"
                   aria-expanded={livingOpen}
                 >
-                  <span>Living</span>
+                  <span>Living Essentials</span>
                   <svg className={`nav-chevron ${livingOpen ? 'nav-chevron--open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
@@ -150,7 +150,6 @@ function Navbar() {
                         className={`nav-dropdown-item ${isActive('/marketplace') ? 'nav-dropdown-item--active' : ''}`}
                         onClick={() => { setLivingOpen(false); closeMobileMenu(); }}
                       >
-                        <span className="nav-dropdown-icon">🛒</span>
                         <span>Marketplace</span>
                       </Link>
                     </li>
@@ -231,7 +230,7 @@ function Navbar() {
                   className={`navbar-link navbar-link-mm ${isActive('/marketplace-manager') ? 'active' : ''}`}
                   onClick={closeMobileMenu}
                 >
-                  <span>🛒 Marketplace Manager</span>
+                  <span>Marketplace Manager</span>
                   <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M9 18l6-6-6-6"/>
                   </svg>

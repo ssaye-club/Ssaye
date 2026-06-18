@@ -91,6 +91,144 @@ function PriceBar({ label, price, ssayePrice, maxPrice, isSSaye }) {
   );
 }
 
+// ─── Subscribe & Save Modal ───────────────────────────────────────────────────
+const FREQUENCIES = [
+  { value: 'weekly',    label: 'Every week' },
+  { value: 'biweekly',  label: 'Every 2 weeks' },
+  { value: 'monthly',   label: 'Every month' },
+  { value: 'bimonthly', label: 'Every 2 months' },
+  { value: 'quarterly', label: 'Every 3 months' },
+];
+
+function toInputDate(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function SubscribeModal({ product, token, onClose, onSuccess }) {
+  const today   = new Date();
+  const oneMonth = new Date(today);
+  oneMonth.setMonth(oneMonth.getMonth() + 1);
+
+  const [frequency,  setFrequency]  = useState('monthly');
+  const [startDate,  setStartDate]  = useState(toInputDate(today));
+  const [endDate,    setEndDate]    = useState(toInputDate(oneMonth));
+  const [notes,      setNotes]      = useState('');
+  const [placing,    setPlacing]    = useState(false);
+  const [error,      setError]      = useState(null);
+
+  const discountPct = 10; // 10 % subscribe & save discount
+  const discountedPrice = (product.price * (1 - discountPct / 100)).toFixed(2);
+
+  const handleSubmit = async () => {
+    if (!startDate || !endDate) { setError('Please select start and end dates.'); return; }
+    if (new Date(endDate) <= new Date(startDate)) { setError('End date must be after start date.'); return; }
+    setPlacing(true); setError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/subscriptions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          product: {
+            productId: product.id,
+            name:      product.name,
+            brand:     product.brand,
+            category:  product.category,
+            emoji:     product.emoji,
+            price:     parseFloat(discountedPrice),
+          },
+          frequency,
+          startDate,
+          endDate,
+          notes,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) onSuccess(data.subscription);
+      else setError(data.message || 'Could not place subscription.');
+    } catch { setError('Could not reach the server.'); }
+    finally  { setPlacing(false); }
+  };
+
+  return (
+    <div className="mp-modal-overlay" onClick={onClose}>
+      <div className="sub-modal" onClick={e => e.stopPropagation()}>
+        <button className="mp-modal-close" onClick={onClose}>✕</button>
+
+        <div className="sub-modal-header">
+          <span className="sub-modal-icon">🔄</span>
+          <h2 className="sub-modal-title">Subscribe &amp; Save</h2>
+          <p className="sub-modal-product">{product.name}</p>
+          <div className="sub-discount-badge">Save {discountPct}% — ${discountedPrice} / delivery</div>
+        </div>
+
+        <div className="sub-modal-body">
+          {/* Frequency */}
+          <div className="sub-field">
+            <label className="sub-label">Delivery Frequency</label>
+            <div className="sub-freq-grid">
+              {FREQUENCIES.map(f => (
+                <button
+                  key={f.value}
+                  className={`sub-freq-btn ${frequency === f.value ? 'sub-freq-btn--active' : ''}`}
+                  onClick={() => setFrequency(f.value)}
+                  type="button"
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Date range */}
+          <div className="sub-date-row">
+            <div className="sub-field">
+              <label className="sub-label">Start Date</label>
+              <input
+                type="date"
+                className="sub-date-input"
+                value={startDate}
+                min={toInputDate(today)}
+                onChange={e => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="sub-field">
+              <label className="sub-label">End Date</label>
+              <input
+                type="date"
+                className="sub-date-input"
+                value={endDate}
+                min={startDate || toInputDate(today)}
+                onChange={e => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="sub-field">
+            <label className="sub-label">Notes <span className="sub-label-opt">(optional)</span></label>
+            <textarea
+              className="sub-notes"
+              placeholder="e.g. leave at front door"
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          {error && <p className="mp-checkout-error">{error}</p>}
+        </div>
+
+        <div className="sub-modal-footer">
+          <button className="sub-confirm-btn" onClick={handleSubmit} disabled={placing}>
+            {placing ? 'Subscribing…' : '🔄 Confirm Subscription'}
+          </button>
+          <button className="mp-modal-btn-secondary" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Cart helpers using localStorage ─────────────────────────────────────────
 function readCart()       { try { return JSON.parse(localStorage.getItem('ssaye_cart') || '{}'); } catch { return {}; } }
 function writeCart(cart)  { localStorage.setItem('ssaye_cart', JSON.stringify(cart)); }
@@ -99,7 +237,7 @@ function writeCart(cart)  { localStorage.setItem('ssaye_cart', JSON.stringify(ca
 export default function ProductDetail() {
   const { id }    = useParams();
   const navigate  = useNavigate();
-  const { isAuthenticated, token } = useContext(AuthContext);
+  const { isAuthenticated, token, user } = useContext(AuthContext);
 
   const [product,  setProduct]  = useState(null);
   const [prodLoad, setProdLoad] = useState(true);
@@ -118,9 +256,26 @@ export default function ProductDetail() {
   const [placing,     setPlacing]     = useState(false);
   const [placeErr,    setPlaceErr]    = useState(null);
   const [showLogin,   setShowLogin]   = useState(false);
+  const [subOpen,     setSubOpen]     = useState(false);
+  const [subDone,     setSubDone]     = useState(null);
+
+  // Reviews state
+  const [reviews,      setReviews]      = useState([]);
+  const [reviewsLoad,  setReviewsLoad]  = useState(true);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewBody,   setReviewBody]   = useState('');
+  const [reviewHover,  setReviewHover]  = useState(0);
+  const [reviewErr,    setReviewErr]    = useState(null);
+  const [reviewOk,     setReviewOk]     = useState(false);
+  const [reviewSaving, setReviewSaving] = useState(false);
 
   // Persist cart to localStorage whenever it changes
   useEffect(() => { writeCart(cart); }, [cart]);
+
+  // Clear in-memory cart immediately when user logs out
+  useEffect(() => {
+    if (!token) setCartState({});
+  }, [token]);
 
   // Fetch product
   useEffect(() => {
@@ -141,6 +296,43 @@ export default function ProductDetail() {
       .catch(() => setCompErr('Could not reach the server.'))
       .finally(() => setCompLoad(false));
   }, [id]);
+
+  // Fetch reviews
+  useEffect(() => {
+    setReviewsLoad(true);
+    fetch(`${API_URL}/api/reviews/${id}`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setReviews(d.reviews); })
+      .catch(() => {})
+      .finally(() => setReviewsLoad(false));
+  }, [id]);
+
+  const submitReview = async () => {
+    if (!isAuthenticated()) { setShowLogin(true); return; }
+    if (reviewRating === 0) { setReviewErr('Please select a star rating.'); return; }
+    if (!reviewBody.trim()) { setReviewErr('Please write a review.'); return; }
+    setReviewSaving(true); setReviewErr(null); setReviewOk(false);
+    try {
+      const res = await fetch(`${API_URL}/api/reviews/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating: reviewRating, body: reviewBody.trim(), userName: user?.name || 'Anonymous' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReviewOk(true);
+        setReviewBody('');
+        setReviewRating(0);
+        // Refresh review list
+        fetch(`${API_URL}/api/reviews/${id}`)
+          .then(r => r.json())
+          .then(d => { if (d.success) setReviews(d.reviews); });
+      } else {
+        setReviewErr(data.message || 'Could not submit review.');
+      }
+    } catch { setReviewErr('Could not reach the server.'); }
+    finally { setReviewSaving(false); }
+  };
 
   const addToCart = () => {
     if (!isAuthenticated()) { setShowLogin(true); return; }
@@ -293,6 +485,9 @@ export default function ProductDetail() {
                 <button className="pdp-add-btn" onClick={addToCart}>🛒 Add to Cart</button>
               )}
               <button className="pdp-buynow-btn" onClick={handleBuyNow}>Buy Now</button>
+              <button className="pdp-sub-btn" onClick={() => { if (!isAuthenticated()) { setShowLogin(true); return; } setSubOpen(true); }}>
+                🔄 Subscribe &amp; Save
+              </button>
             </div>
             {qty > 0 && <p className="pdp-in-cart">{qty} in your cart</p>}
           </div>
@@ -399,6 +594,84 @@ export default function ProductDetail() {
             </div>
           </section>
 
+          {/* Customer Reviews */}
+          <section className="pd-section rev-section">
+            <h2 className="pd-section-title">💬 Customer Reviews</h2>
+            <p className="pd-section-sub">{reviews.length} {reviews.length === 1 ? 'review' : 'reviews'} for this product</p>
+
+            {/* Submit form */}
+            <div className="rev-form">
+              <p className="rev-form-title">{isAuthenticated() ? 'Write a Review' : 'Sign in to leave a review'}</p>
+
+              {/* Star picker */}
+              <div className="rev-star-picker">
+                {[1,2,3,4,5].map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`rev-star-btn ${s <= (reviewHover || reviewRating) ? 'rev-star-btn--filled' : ''}`}
+                    onClick={() => { if (isAuthenticated()) setReviewRating(s); else setShowLogin(true); }}
+                    onMouseEnter={() => isAuthenticated() && setReviewHover(s)}
+                    onMouseLeave={() => setReviewHover(0)}
+                    aria-label={`${s} star`}
+                  >★</button>
+                ))}
+                {reviewRating > 0 && (
+                  <span className="rev-rating-label">
+                    {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'][reviewRating]}
+                  </span>
+                )}
+              </div>
+
+              <textarea
+                className="rev-textarea"
+                placeholder={isAuthenticated() ? 'Share your experience with this product…' : 'Sign in to write a review'}
+                value={reviewBody}
+                onChange={e => setReviewBody(e.target.value)}
+                maxLength={1000}
+                rows={4}
+                disabled={!isAuthenticated()}
+                onClick={() => { if (!isAuthenticated()) setShowLogin(true); }}
+              />
+              <div className="rev-form-footer">
+                <span className="rev-char-count">{reviewBody.length}/1000</span>
+                <button
+                  className="rev-submit-btn"
+                  onClick={submitReview}
+                  disabled={reviewSaving || !isAuthenticated()}
+                >
+                  {reviewSaving ? 'Submitting…' : 'Submit Review'}
+                </button>
+              </div>
+              {reviewErr && <p className="rev-error">{reviewErr}</p>}
+              {reviewOk  && <p className="rev-success">Your review has been submitted!</p>}
+            </div>
+
+            {/* Review list */}
+            {reviewsLoad ? (
+              <div className="pd-loading"><div className="mp-spinner" /><p>Loading reviews…</p></div>
+            ) : reviews.length === 0 ? (
+              <p className="rev-empty">No reviews yet. Be the first to review this product!</p>
+            ) : (
+              <div className="rev-list">
+                {reviews.map(r => (
+                  <div key={r._id} className="rev-card">
+                    <div className="rev-card-header">
+                      <span className="rev-author">{r.userName}</span>
+                      <span className="rev-stars">
+                        {[1,2,3,4,5].map(s => (
+                          <span key={s} className={s <= r.rating ? 'mp-star filled' : 'mp-star'}>★</span>
+                        ))}
+                      </span>
+                      <span className="rev-date">{new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
+                    <p className="rev-body">{r.body}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
         </div>
         </div>{/* end pdp-main */}
       </div>
@@ -445,6 +718,33 @@ export default function ProductDetail() {
             <p className="mp-modal-body">Order <strong>#{buyNowDone.orderNumber}</strong> confirmed.<br />Total: <strong>${buyNowDone.total?.toFixed(2)}</strong></p>
             <div className="mp-modal-actions">
               <button className="mp-modal-btn-primary" onClick={() => { setBuyNowDone(null); navigate('/marketplace'); }}>Continue Shopping</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Subscribe & Save modal ── */}
+      {subOpen && product && (
+        <SubscribeModal
+          product={product}
+          token={token}
+          onClose={() => setSubOpen(false)}
+          onSuccess={(sub) => { setSubOpen(false); setSubDone(sub); }}
+        />
+      )}
+
+      {/* ── Subscription confirmed ── */}
+      {subDone && (
+        <div className="mp-modal-overlay">
+          <div className="mp-modal" onClick={e => e.stopPropagation()}>
+            <div className="mp-modal-icon">🔄</div>
+            <h2 className="mp-modal-title">Subscribed!</h2>
+            <p className="mp-modal-body">
+              <strong>{subDone.subscriptionNumber}</strong> is active.<br />
+              {FREQUENCIES.find(f => f.value === subDone.frequency)?.label} · {new Date(subDone.startDate).toLocaleDateString()} → {new Date(subDone.endDate).toLocaleDateString()}
+            </p>
+            <div className="mp-modal-actions">
+              <button className="mp-modal-btn-primary" onClick={() => { setSubDone(null); navigate('/marketplace'); }}>Continue Shopping</button>
             </div>
           </div>
         </div>
