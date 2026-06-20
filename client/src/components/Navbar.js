@@ -150,8 +150,14 @@ function Navbar() {
                         className={`nav-dropdown-item ${isActive('/marketplace') ? 'nav-dropdown-item--active' : ''}`}
                         onClick={() => { setLivingOpen(false); closeMobileMenu(); }}
                       >
-                        <span>Marketplace</span>
+                        <span>Grocery</span>
                       </Link>
+                    </li>
+                    <li>
+                      <span className="nav-dropdown-item nav-dropdown-item--disabled">
+                        <span>Home Goods</span>
+                        <span className="nav-dropdown-coming-soon">Coming Soon</span>
+                      </span>
                     </li>
                   </ul>
                 )}

@@ -564,6 +564,30 @@
   flex-shrink: 0;
 }
 
+.nav-dropdown-item--disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+  justify-content: space-between;
+}
+
+.nav-dropdown-item--disabled:hover {
+  background: transparent;
+  color: #333;
+}
+
+.nav-dropdown-coming-soon {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: auto;
+}
+
 /* ── Mobile: Living dropdown expands inline ──────────────────────────────── */
 @media screen and (max-width: 768px) {
   .nav-chevron { display: none; }
