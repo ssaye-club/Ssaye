@@ -64,7 +64,7 @@ function Admin() {
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/admin/all`, {
@@ -88,7 +88,7 @@ function Admin() {
 
   const handleReview = async (applicationId) => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/admin/review/${applicationId}`, {
@@ -123,7 +123,7 @@ function Admin() {
 
   const submitApproval = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/admin/approve/${approvalModalApplication._id}`, {

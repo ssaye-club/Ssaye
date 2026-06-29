@@ -328,13 +328,9 @@
     gap: 0;
   }
 
-  /* On mobile the sidebar sits above the main content, not beside it */
+  /* Hide sidebar on mobile — product detail doesn't need category list */
   .pdp-sidebar {
-    position: static;
-    width: 100%;
-    max-height: none;
-    overflow-y: visible;
-    margin-bottom: 16px;
+    display: none;
   }
 
   .pdp-hero {

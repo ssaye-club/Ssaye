@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import './MarketplaceManager.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 const STATUS_LABELS = {
   pending:    { label: 'Pending',    color: '#f59e0b' },
@@ -985,6 +985,172 @@ function StubTab({ icon, title, description }) {
   );
 }
 
+// ─── Stock Alerts Tab ─────────────────────────────────────────────────────────
+function AlertsTab({ token }) {
+  const [products,      setProducts]      = useState([]);
+  const [alertsLoading, setAlertsLoading] = useState(false);
+  const [lastUpdated,   setLastUpdated]   = useState(null);
+  const [categoryFilter,setCategoryFilter]= useState('all');
+  const [statusFilter,  setStatusFilter]  = useState('all');
+  const [search,        setSearch]        = useState('');
+
+  const fetchInventory = async () => {
+    if (!token) return;
+    setAlertsLoading(true);
+    try {
+      let all = [], page = 1, pages = 1;
+      while (page <= pages) {
+        const res = await fetch(`${API_URL}/api/inventory?limit=100&page=${page}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.success) {
+          all   = all.concat(data.products || []);
+          pages = data.pages || 1;
+        }
+        page++;
+      }
+      setProducts(all);
+      setLastUpdated(new Date());
+    } catch (e) {
+      console.error('Failed to fetch inventory for alerts', e);
+    } finally {
+      setAlertsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInventory();
+    const id = setInterval(fetchInventory, 60000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  const outOfStock = products.filter(p => p.stock === 'Out of Stock');
+  const lowStock   = products.filter(p => p.stock === 'Low');
+  const inStock    = products.filter(p => p.stock === 'In Stock');
+
+  const categories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean))).sort()];
+
+  const filtered = products.filter(p => {
+    if (statusFilter !== 'all' && p.stock !== statusFilter) return false;
+    if (categoryFilter !== 'all' && p.category !== categoryFilter) return false;
+    if (search && !p.name?.toLowerCase().includes(search.toLowerCase()) &&
+        !p.brand?.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const ALERT_COLORS = { 'Out of Stock': '#ef4444', 'Low': '#f59e0b', 'In Stock': '#10b981' };
+
+  return (
+    <div className="mm-orders-tab">
+      <div className="mm-tab-heading">
+        <div>
+          <h2>Stock Alerts</h2>
+          <p>{alertsLoading ? 'Refreshing…' : lastUpdated ? `Last updated ${lastUpdated.toLocaleTimeString()}` : 'Loading…'}</p>
+        </div>
+        <button className="mm-refresh-btn" onClick={fetchInventory} disabled={alertsLoading}>
+          🔄 Refresh
+        </button>
+      </div>
+
+      {/* Summary cards */}
+      <div className="mm-stats-grid" style={{ marginBottom: 24 }}>
+        <div className="mm-stat-card mm-stat-card--red">
+          <div className="mm-stat-icon">🚨</div>
+          <div className="mm-stat-body">
+            <p className="mm-stat-label">Out of Stock</p>
+            <p className="mm-stat-value">{outOfStock.length}</p>
+          </div>
+        </div>
+        <div className="mm-stat-card mm-stat-card--amber">
+          <div className="mm-stat-icon">⚠️</div>
+          <div className="mm-stat-body">
+            <p className="mm-stat-label">Low Stock</p>
+            <p className="mm-stat-value">{lowStock.length}</p>
+          </div>
+        </div>
+        <div className="mm-stat-card mm-stat-card--green">
+          <div className="mm-stat-icon">✅</div>
+          <div className="mm-stat-body">
+            <p className="mm-stat-label">In Stock</p>
+            <p className="mm-stat-value">{inStock.length}</p>
+          </div>
+        </div>
+        <div className="mm-stat-card mm-stat-card--blue">
+          <div className="mm-stat-icon">📦</div>
+          <div className="mm-stat-body">
+            <p className="mm-stat-label">Total Products</p>
+            <p className="mm-stat-value">{products.length}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="inv-filters">
+        <input
+          className="inv-search"
+          placeholder="🔍 Search by name or brand…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <select className="mm-status-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="all">All Stock Status</option>
+          <option value="Out of Stock">Out of Stock</option>
+          <option value="Low">Low</option>
+          <option value="In Stock">In Stock</option>
+        </select>
+        <select className="mm-status-select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
+          {categories.map(c => <option key={c} value={c}>{c === 'all' ? 'All Categories' : c}</option>)}
+        </select>
+      </div>
+
+      {/* Table */}
+      <div className="mm-sub-table-wrap">
+        <table className="mm-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Brand</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+                {alertsLoading ? 'Loading…' : 'No products match your filters.'}
+              </td></tr>
+            ) : filtered.map(p => (
+              <tr key={p._id || p.id}>
+                <td>
+                  <div className="mm-product-cell">
+                    <span>{p.emoji}</span>
+                    <div className="mm-product-name">{p.name}</div>
+                  </div>
+                </td>
+                <td style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{p.brand}</td>
+                <td><span className="mm-category-chip">{p.category}</span></td>
+                <td><strong>${p.price?.toFixed(2)}</strong></td>
+                <td>
+                  <span className="mm-status-badge" style={{
+                    background: (ALERT_COLORS[p.stock] || '#6b7280') + '22',
+                    color: ALERT_COLORS[p.stock] || '#6b7280',
+                    borderColor: (ALERT_COLORS[p.stock] || '#6b7280') + '55',
+                  }}>
+                    {p.stock}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function MarketplaceManager() {
   const { user, isAuthenticated, token } = useContext(AuthContext);
@@ -1058,9 +1224,10 @@ export default function MarketplaceManager() {
     { id: 'customers',     label: '👥 Customers'        },
     { id: 'subscriptions', label: '🔄 Subscriptions'    },
     { id: 'inventory',     label: '🏪 Inventory'        },
+    { id: 'alerts',        label: '🔔 Stock Alerts'     },
+    { id: 'vendors',       label: '🤝 Vendors',          comingSoon: true },
     { id: 'images',        label: '🖼 Images'           },
     { id: 'payments',      label: '💳 Payments'         },
-    { id: 'vendors',       label: '🤝 Vendors'          },
   ];
 
   return (
@@ -1086,10 +1253,11 @@ export default function MarketplaceManager() {
         {TABS.map((t) => (
           <button
             key={t.id}
-            className={`mm-tab-btn ${activeTab === t.id ? 'mm-tab-btn--active' : ''}`}
+            className={`mm-tab-btn ${activeTab === t.id ? 'mm-tab-btn--active' : ''} ${t.comingSoon ? 'mm-tab-btn--coming-soon' : ''}`}
             onClick={() => setActiveTab(t.id)}
           >
             {t.label}
+            {t.comingSoon && <span className="mm-tab-coming-soon">Coming Soon</span>}
           </button>
         ))}
       </div>
@@ -1139,6 +1307,9 @@ export default function MarketplaceManager() {
             )}
             {activeTab === 'inventory' && (
               <InventoryTab token={token} />
+            )}
+            {activeTab === 'alerts' && (
+              <AlertsTab token={token} />
             )}
             {activeTab === 'images' && (
               <ImagesTab token={token} />

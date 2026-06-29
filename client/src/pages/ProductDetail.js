@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import './ProductDetail.css';
 import './Marketplace.css'; // reuse pd-* and mp-* classes
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 const CATEGORIES = [
   "All Products",
@@ -406,7 +406,7 @@ export default function ProductDetail() {
           ← Marketplace
         </button>
         <button className="pdp-cart-btn" onClick={() => navigate('/marketplace?cart=1')}>
-          🛒 Cart {totalQty > 0 && <span className="pdp-cart-badge">{totalQty}</span>}
+          Cart {totalQty > 0 && <span className="pdp-cart-badge">{totalQty}</span>}
         </button>
       </div>
 
@@ -482,7 +482,7 @@ export default function ProductDetail() {
                   <button className="mp-qty-btn mp-qty-btn--add" onClick={addToCart}>+</button>
                 </div>
               ) : (
-                <button className="pdp-add-btn" onClick={addToCart}>🛒 Add to Cart</button>
+                <button className="pdp-add-btn" onClick={addToCart}>Add to Cart</button>
               )}
               <button className="pdp-buynow-btn" onClick={handleBuyNow}>Buy Now</button>
               <button className="pdp-sub-btn" onClick={() => { if (!isAuthenticated()) { setShowLogin(true); return; } setSubOpen(true); }}>

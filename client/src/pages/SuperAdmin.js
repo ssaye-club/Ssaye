@@ -140,7 +140,7 @@ function SuperAdmin() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/superadmin/users`, {
@@ -164,7 +164,7 @@ function SuperAdmin() {
 
   const fetchStats = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/superadmin/stats`, {
@@ -208,7 +208,7 @@ function SuperAdmin() {
 
   const handlePromoteWithPermissions = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const endpoint = isEditMode 
@@ -298,7 +298,7 @@ function SuperAdmin() {
     }
 
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/superadmin/users/${userId}/demote-admin`, {
@@ -337,7 +337,7 @@ function SuperAdmin() {
     }
 
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/superadmin/users/${userId}`, {
@@ -377,7 +377,7 @@ function SuperAdmin() {
     }
 
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/superadmin/users/${userId}/${action}`, {
@@ -418,7 +418,7 @@ function SuperAdmin() {
     }
 
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/superadmin/users/${userId}/toggle-premium`, {
@@ -447,7 +447,7 @@ function SuperAdmin() {
 
   const fetchPendingInvestments = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/superadmin/pending-final`, {
@@ -467,7 +467,7 @@ function SuperAdmin() {
 
   const fetchApprovedInvestments = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/superadmin/approved`, {
@@ -511,7 +511,7 @@ function SuperAdmin() {
     if (!confirmed) return;
 
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/superadmin/final-approve/${selectedInvestment._id}`, {
@@ -552,7 +552,7 @@ function SuperAdmin() {
   // Investment Opportunities Functions
   const fetchOpportunities = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/opportunities/admin/all`, {
@@ -618,7 +618,7 @@ function SuperAdmin() {
     e.preventDefault();
     
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const url = editingOpportunity 
@@ -676,7 +676,7 @@ function SuperAdmin() {
     }
 
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/opportunities/${id}`, {
@@ -701,7 +701,7 @@ function SuperAdmin() {
 
   const handleToggleActive = async (id) => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/opportunities/${id}/toggle-status`, {

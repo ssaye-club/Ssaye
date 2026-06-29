@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import logo from '../images/logo.png';
 import './SsayeBot.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 const QUICK_ACTIONS = [
   '🌶️ What spices do you carry?',

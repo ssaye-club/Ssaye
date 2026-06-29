@@ -48,7 +48,7 @@ function Portfolio() {
   const fetchApplications = async () => {
     setLoadingApplications(true);
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/my-applications`, {
@@ -71,7 +71,7 @@ function Portfolio() {
   // Fetch portfolio statistics
   const fetchPortfolioStats = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/portfolio-stats`, {
@@ -102,7 +102,7 @@ function Portfolio() {
   // Fetch user's investments (assets)
   const fetchInvestments = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/my-investments`, {
@@ -141,7 +141,7 @@ function Portfolio() {
   // Fetch transactions
   const fetchTransactions = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/transactions`, {
@@ -165,7 +165,7 @@ function Portfolio() {
   // Fetch performance data
   const fetchPerformance = async () => {
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/api/investments/performance`, {
@@ -190,7 +190,7 @@ function Portfolio() {
   const fetchMarketData = async (timePeriod = '1D') => {
     try {
       setLoadingMarket(true);
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       
       const symbols = [
         { key: 'nasdaq', symbol: '^IXIC', multiplier: 1 },  // NASDAQ Composite

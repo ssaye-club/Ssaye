@@ -237,7 +237,7 @@ router.get('/', authMiddleware, requireSuperAdmin, async (req, res) => {
         .sort({ id: 1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .select('id name brand category price stock emoji itemNum updatedAt')
+        .select('id name brand category price stock emoji imageUrl itemNum updatedAt')
         .lean(),
       Product.countDocuments(filter),
       Product.aggregate([{ $group: { _id: '$stock', count: { $sum: 1 } } }]),
