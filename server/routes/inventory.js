@@ -119,7 +119,24 @@ router.post('/import', authMiddleware, requireSuperAdmin, async (req, res) => {
     const lines = csvText.split('\n').map(l => l.trim()).filter(Boolean);
     if (lines.length < 2) return res.status(400).json({ success: false, message: 'CSV has no data rows' });
 
-    const dataLines = lines[0].toLowerCase().includes('itemnum') ? lines.slice(1) : lines;
+    const headerLine = lines[0].toLowerCase();
+    const hasHeader  = headerLine.includes('itemnum');
+    const dataLines  = hasHeader ? lines.slice(1) : lines;
+
+    // Detect column positions from header (supports optional Vendor column)
+    let colItemNum = 0, colName = 1, colStock = 2, colPrice = 3, colVendor = -1;
+    if (hasHeader) {
+      const cols = lines[0].split(',').map(c => c.trim().toLowerCase());
+      colItemNum = cols.findIndex(c => c === 'itemnum');
+      colName    = cols.findIndex(c => c === 'itemname');
+      colStock   = cols.findIndex(c => c === 'in_stock');
+      colPrice   = cols.findIndex(c => c === 'price');
+      colVendor  = cols.findIndex(c => c === 'vendor');
+      if (colItemNum < 0) colItemNum = 0;
+      if (colName    < 0) colName    = 1;
+      if (colStock   < 0) colStock   = 2;
+      if (colPrice   < 0) colPrice   = 3;
+    }
 
     // Parse all valid rows first
     const rows = [];
@@ -127,12 +144,13 @@ router.post('/import', authMiddleware, requireSuperAdmin, async (req, res) => {
     for (const line of dataLines) {
       const parts = line.split(',');
       if (parts.length < 4) { skipped++; continue; }
-      const itemNum  = parts[0].trim();
-      const itemName = parts[1].trim();
-      const inStock  = parseFloat(parts[2]);
-      const price    = parseFloat(parts[3]);
+      const itemNum  = parts[colItemNum]?.trim() || '';
+      const itemName = parts[colName]?.trim()    || '';
+      const inStock  = parseFloat(parts[colStock]);
+      const price    = parseFloat(parts[colPrice]);
+      const vendor   = colVendor >= 0 ? (parts[colVendor]?.trim() || null) : null;
       if (!itemName || isNaN(price) || price < 0) { skipped++; continue; }
-      rows.push({ itemNum, itemName, inStock: isNaN(inStock) ? 0 : inStock, price });
+      rows.push({ itemNum, itemName, inStock: isNaN(inStock) ? 0 : inStock, price, vendor });
     }
 
     if (rows.length === 0) return res.json({ success: true, results: { inserted: 0, updated: 0, skipped } });
@@ -161,15 +179,17 @@ router.post('/import', authMiddleware, requireSuperAdmin, async (req, res) => {
     let inserted = 0;
     let updated  = 0;
 
-    for (const { itemNum, itemName, inStock, price } of rows) {
+    for (const { itemNum, itemName, inStock, price, vendor } of rows) {
       const stock    = stockStatus(inStock);
       const existId  = existingByItemNum.get(itemNum) || existingByName.get(itemName.toLowerCase());
 
       if (existId) {
+        const updateFields = { stock, price, itemNum };
+        if (vendor !== null) updateFields.vendor = vendor;
         bulkOps.push({
           updateOne: {
             filter: { _id: existId },
-            update: { $set: { stock, price, itemNum } },
+            update: { $set: updateFields },
           }
         });
         updated++;
@@ -186,6 +206,7 @@ router.post('/import', authMiddleware, requireSuperAdmin, async (req, res) => {
               category,
               price,
               stock,
+              vendor:   vendor || null,
               emoji:    CATEGORY_EMOJI[category] || '🛒',
               rating:   4.0,
               reviews:  0,
@@ -321,6 +342,74 @@ router.get('/search-by-itemnum', authMiddleware, requireSuperAdmin, async (req, 
       .limit(20)
       .lean();
     res.json({ success: true, products });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ── GET /api/inventory/vendors ── list all vendors with their product counts ────
+router.get('/vendors', authMiddleware, requireSuperAdmin, async (req, res) => {
+  try {
+    const vendors = await Product.aggregate([
+      { $match: { vendor: { $ne: null, $exists: true } } },
+      { $group: {
+        _id: '$vendor',
+        productCount: { $sum: 1 },
+        inStock:      { $sum: { $cond: [{ $eq: ['$stock', 'In Stock'] }, 1, 0] } },
+        lowStock:     { $sum: { $cond: [{ $eq: ['$stock', 'Low'] },      1, 0] } },
+        outOfStock:   { $sum: { $cond: [{ $eq: ['$stock', 'Out of Stock'] }, 1, 0] } },
+        categories:   { $addToSet: '$category' },
+      }},
+      { $sort: { _id: 1 } },
+    ]);
+    res.json({ success: true, vendors: vendors.map(v => ({
+      name:         v._id,
+      productCount: v.productCount,
+      inStock:      v.inStock,
+      lowStock:     v.lowStock,
+      outOfStock:   v.outOfStock,
+      categories:   v.categories.filter(Boolean).sort(),
+    }))});
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ── GET /api/inventory/vendors/:name/products ── paginated products for one vendor ──
+router.get('/vendors/:name/products', authMiddleware, requireSuperAdmin, async (req, res) => {
+  try {
+    const vendorName = decodeURIComponent(req.params.name);
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 50);
+    const search   = req.query.search   || '';
+    const category = req.query.category || '';
+    const stock    = req.query.stock    || '';
+
+    const filter = { vendor: vendorName };
+    if (search)   filter.$or = [
+      { name:    { $regex: search, $options: 'i' } },
+      { itemNum: { $regex: search, $options: 'i' } },
+    ];
+    if (category) filter.category = category;
+    if (stock)    filter.stock    = stock;
+
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .sort({ name: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .select('id name brand category price stock emoji imageUrl itemNum vendor')
+        .lean(),
+      Product.countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      products,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

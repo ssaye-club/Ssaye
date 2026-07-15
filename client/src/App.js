@@ -26,9 +26,11 @@ import MarketplaceManager from './pages/MarketplaceManager';
 import './App.css';
 
 const MARKETPLACE_PATHS = ['/marketplace', '/product'];
+const NO_BOT_PATHS      = ['/admin', '/superadmin', '/marketplace-manager'];
 
 function BotRouter() {
   const { pathname } = useLocation();
+  if (NO_BOT_PATHS.some(p => pathname.startsWith(p))) return null;
   const isMarketplace = MARKETPLACE_PATHS.some(p => pathname.startsWith(p));
   return isMarketplace ? <SsayeBot /> : <Chatbot />;
 }

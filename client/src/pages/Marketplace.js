@@ -904,7 +904,6 @@ function Marketplace() {
                 onClick={() => setShowCart(true)}
                 aria-label={`View cart — ${totalQty} item${totalQty !== 1 ? 's' : ''}`}
               >
-                <span className="mp-toolbar-cart-icon">🛒</span>
                 <span className="mp-toolbar-cart-label">
                   Cart{totalQty > 0 ? ` · ${totalQty}` : ''}
                 </span>

@@ -78,6 +78,11 @@ const productSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    vendor: {
+      type: String,
+      default: null,
+      index: true,
+    },
   },
   { timestamps: true }
 );

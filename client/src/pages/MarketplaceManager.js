@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import './MarketplaceManager.css';
+import '../components/CrmBot.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -636,8 +637,8 @@ function InventoryTab({ token }) {
       {/* ── CSV format guide ── */}
       <div className="inv-csv-guide">
         <span className="inv-csv-guide-label">📋 CSV format:</span>
-        <code>ItemNum, ItemName, In_Stock, Price</code>
-        <span className="inv-csv-guide-note">Categories are auto-detected.</span>
+        <code>ItemNum, ItemName, In_Stock, Price[, Vendor]</code>
+        <span className="inv-csv-guide-note">Categories are auto-detected. Vendor column is optional.</span>
       </div>
 
       {/* ── Stock summary chips ── */}
@@ -974,6 +975,330 @@ function ImagesTab({ token }) {
   );
 }
 
+// ─── Vendors Tab ──────────────────────────────────────────────────────────────
+const VENDOR_STOCK_COLORS = { 'In Stock': '#10b981', 'Low': '#f59e0b', 'Out of Stock': '#ef4444' };
+
+function VendorProductsPanel({ token, vendor, onClose, onOrderAll }) {
+  const [products,  setProducts]  = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [page,      setPage]      = useState(1);
+  const [pages,     setPages]     = useState(1);
+  const [total,     setTotal]     = useState(0);
+  const [search,    setSearch]    = useState('');
+  const [filterCat, setFilterCat] = useState('');
+  const [filterStk, setFilterStk] = useState('');
+  const [cart,      setCart]      = useState({});
+  const searchTimer = React.useRef(null);
+  const PAGE_SIZE   = 50;
+
+  const fetchProducts = useCallback(async (p, s, cat, stk) => {
+    if (!token || !vendor) return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: p, limit: PAGE_SIZE });
+      if (s)   params.set('search',   s);
+      if (cat) params.set('category', cat);
+      if (stk) params.set('stock',    stk);
+      const r = await fetch(
+        `${API_URL}/api/inventory/vendors/${encodeURIComponent(vendor.name)}/products?${params}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const d = await r.json();
+      if (d.success) { setProducts(d.products); setTotal(d.total); setPages(d.pages); }
+    } catch {}
+    finally { setLoading(false); }
+  }, [token, vendor]);
+
+  useEffect(() => { setPage(1); setCart({}); fetchProducts(1, '', '', ''); }, [fetchProducts]);
+
+  const handleSearch = (val) => {
+    setSearch(val);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => { setPage(1); fetchProducts(1, val, filterCat, filterStk); }, 350);
+  };
+
+  const applyFilter = (cat, stk) => {
+    setFilterCat(cat); setFilterStk(stk); setPage(1);
+    fetchProducts(1, search, cat, stk);
+  };
+
+  const goToPage = (p) => { setPage(p); fetchProducts(p, search, filterCat, filterStk); };
+
+  const cartItems = products.filter(p => cart[p.id] > 0);
+  const cartTotal = cartItems.reduce((sum, p) => sum + p.price * (cart[p.id] || 0), 0);
+
+  const categories = ['', ...Array.from(new Set(vendor.categories || [])).sort()];
+  const pageNums = [];
+  for (let i = Math.max(1, page - 2); i <= Math.min(pages, page + 2); i++) pageNums.push(i);
+
+  return (
+    <div className="vnd-panel">
+      <div className="vnd-panel-header">
+        <div className="vnd-panel-title-row">
+          <button className="vnd-back-btn" onClick={onClose}>← Back to Vendors</button>
+          <h2 className="vnd-panel-name">{vendor.name}</h2>
+          <div className="vnd-panel-meta">
+            <span className="vnd-panel-count">{total.toLocaleString()} product{total !== 1 ? 's' : ''}</span>
+            {vendor.categories?.length > 0 && (
+              <div className="vnd-panel-cats">
+                {vendor.categories.map(c => <span key={c} className="mm-category-chip">{c}</span>)}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Cart summary */}
+        {cartItems.length > 0 && (
+          <div className="vnd-cart-bar">
+            <span className="vnd-cart-summary">
+              🛒 {cartItems.length} product{cartItems.length !== 1 ? 's' : ''} selected
+              &nbsp;·&nbsp; <strong>${cartTotal.toFixed(2)}</strong>
+            </span>
+            <button className="vnd-order-btn" onClick={() => onOrderAll(vendor.name, cartItems.map(p => ({ ...p, quantity: cart[p.id] })))}>
+              Place Vendor Order
+            </button>
+            <button className="vnd-clear-btn" onClick={() => setCart({})}>Clear</button>
+          </div>
+        )}
+      </div>
+
+      {/* Filters */}
+      <div className="inv-filters">
+        <input
+          className="inv-search"
+          placeholder="🔍 Search products…"
+          value={search}
+          onChange={e => handleSearch(e.target.value)}
+        />
+        <select className="mm-status-select" value={filterCat} onChange={e => applyFilter(e.target.value, filterStk)}>
+          <option value="">All Categories</option>
+          {categories.filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select className="mm-status-select" value={filterStk} onChange={e => applyFilter(filterCat, e.target.value)}>
+          <option value="">All Stock</option>
+          <option>In Stock</option>
+          <option>Low</option>
+          <option>Out of Stock</option>
+        </select>
+      </div>
+
+      <div className="mm-sub-table-wrap" style={{ opacity: loading ? 0.5 : 1, transition: 'opacity 0.15s' }}>
+        <table className="mm-table">
+          <thead>
+            <tr>
+              <th>Item #</th>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && products.length === 0 ? (
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>Loading…</td></tr>
+            ) : products.length === 0 ? (
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>No products match your filters.</td></tr>
+            ) : products.map(p => (
+              <tr key={p.id} className={cart[p.id] > 0 ? 'vnd-row--selected' : ''}>
+                <td><span style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: '#94a3b8' }}>{p.itemNum || p.id}</span></td>
+                <td>
+                  <div className="mm-product-cell">
+                    {p.imageUrl
+                      ? <img src={p.imageUrl} alt="" className="vnd-thumb" />
+                      : <span>{p.emoji}</span>
+                    }
+                    <div>
+                      <div className="mm-product-name">{p.name}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{p.brand}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span className="mm-category-chip">{p.category}</span></td>
+                <td><strong>${p.price.toFixed(2)}</strong></td>
+                <td>
+                  <span className="mm-status-badge" style={{
+                    background: (VENDOR_STOCK_COLORS[p.stock] || '#6b7280') + '22',
+                    color: VENDOR_STOCK_COLORS[p.stock] || '#6b7280',
+                    borderColor: (VENDOR_STOCK_COLORS[p.stock] || '#6b7280') + '55',
+                  }}>{p.stock}</span>
+                </td>
+                <td>
+                  <div className="vnd-qty-row">
+                    <button
+                      className="vnd-qty-btn"
+                      onClick={() => setCart(prev => ({ ...prev, [p.id]: Math.max(0, (prev[p.id] || 0) - 1) }))}
+                      disabled={(cart[p.id] || 0) === 0}
+                    >−</button>
+                    <span className="vnd-qty-val">{cart[p.id] || 0}</span>
+                    <button
+                      className="vnd-qty-btn"
+                      onClick={() => setCart(prev => ({ ...prev, [p.id]: (prev[p.id] || 0) + 1 }))}
+                    >+</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {pages > 1 && (
+        <div className="inv-pagination">
+          <button className="inv-page-btn" onClick={() => goToPage(page - 1)} disabled={page === 1}>‹</button>
+          {page > 3 && <><button className="inv-page-btn" onClick={() => goToPage(1)}>1</button><span className="inv-page-ellipsis">…</span></>}
+          {pageNums.map(n => (
+            <button key={n} className={`inv-page-btn ${n === page ? 'inv-page-btn--active' : ''}`} onClick={() => goToPage(n)}>{n}</button>
+          ))}
+          {page < pages - 2 && <><span className="inv-page-ellipsis">…</span><button className="inv-page-btn" onClick={() => goToPage(pages)}>{pages}</button></>}
+          <button className="inv-page-btn" onClick={() => goToPage(page + 1)} disabled={page === pages}>›</button>
+          <span className="inv-page-info">Page {page} of {pages} · {total.toLocaleString()} products</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VendorsTab({ token }) {
+  const [vendors,        setVendors]        = useState([]);
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState(null);
+  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [orderSuccess,   setOrderSuccess]   = useState(null);
+  const [orderError,     setOrderError]     = useState(null);
+  const [ordering,       setOrdering]       = useState(false);
+  const [search,         setSearch]         = useState('');
+
+  const fetchVendors = useCallback(async () => {
+    if (!token) return;
+    setLoading(true); setError(null);
+    try {
+      const r = await fetch(`${API_URL}/api/inventory/vendors`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await r.json();
+      if (d.success) setVendors(d.vendors);
+      else setError('Failed to load vendors.');
+    } catch { setError('Could not reach the server.'); }
+    finally { setLoading(false); }
+  }, [token]);
+
+  useEffect(() => { fetchVendors(); }, [fetchVendors]);
+
+  const handleOrderAll = async (vendorName, items) => {
+    setOrdering(true); setOrderSuccess(null); setOrderError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/marketplace-orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          items: items.map(p => ({ productId: p._id || p.id, quantity: p.quantity })),
+          vendorOrder: vendorName,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOrderSuccess(`Order ${data.order.orderNumber} placed successfully for ${vendorName}!`);
+        setSelectedVendor(null);
+      } else {
+        setOrderError(data.message || 'Failed to place order.');
+      }
+    } catch { setOrderError('Could not reach the server.'); }
+    finally { setOrdering(false); }
+  };
+
+  const filtered = vendors.filter(v =>
+    !search || v.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) return <div className="mm-loading"><div className="mm-spinner" /><p>Loading vendors…</p></div>;
+  if (error)   return <div className="mm-error"><span>⚠️</span><p>{error}</p></div>;
+
+  if (selectedVendor) {
+    return (
+      <VendorProductsPanel
+        token={token}
+        vendor={selectedVendor}
+        onClose={() => setSelectedVendor(null)}
+        onOrderAll={handleOrderAll}
+      />
+    );
+  }
+
+  return (
+    <div className="mm-orders-tab">
+      <div className="mm-tab-heading">
+        <div>
+          <h2>Vendors</h2>
+          <p>{vendors.length} vendor{vendors.length !== 1 ? 's' : ''} in inventory</p>
+        </div>
+        <button className="mm-refresh-btn" onClick={fetchVendors}>🔄 Refresh</button>
+      </div>
+
+      {orderSuccess && (
+        <div className="inv-import-banner inv-import-banner--success" style={{ marginBottom: 16 }}>
+          ✅ {orderSuccess}
+          <button className="inv-banner-close" onClick={() => setOrderSuccess(null)}>✕</button>
+        </div>
+      )}
+      {orderError && (
+        <div className="inv-import-banner inv-import-banner--error" style={{ marginBottom: 16 }}>
+          ⚠️ {orderError}
+          <button className="inv-banner-close" onClick={() => setOrderError(null)}>✕</button>
+        </div>
+      )}
+      {ordering && (
+        <div className="mm-loading" style={{ padding: '12px 0' }}>
+          <div className="mm-spinner" /><p>Placing order…</p>
+        </div>
+      )}
+
+      {vendors.length === 0 ? (
+        <div className="mm-stub">
+          <span className="mm-stub-icon">🤝</span>
+          <h3>No vendors yet</h3>
+          <p>Import a CSV with a Vendor column to populate this tab.</p>
+        </div>
+      ) : (
+        <>
+          <div style={{ marginBottom: 16 }}>
+            <input
+              className="inv-search"
+              placeholder="🔍 Search vendors…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ maxWidth: 320 }}
+            />
+          </div>
+          <div className="vnd-grid">
+            {filtered.map(v => (
+              <div key={v.name} className="vnd-card" onClick={() => setSelectedVendor(v)}>
+                <div className="vnd-card-header">
+                  <span className="vnd-card-icon">🤝</span>
+                  <h3 className="vnd-card-name">{v.name}</h3>
+                </div>
+                <div className="vnd-card-stats">
+                  <span className="vnd-stat"><strong>{v.productCount.toLocaleString()}</strong> products</span>
+                  <span className="vnd-stat vnd-stat--green">{v.inStock} in stock</span>
+                  {v.lowStock > 0    && <span className="vnd-stat vnd-stat--amber">{v.lowStock} low</span>}
+                  {v.outOfStock > 0  && <span className="vnd-stat vnd-stat--red">{v.outOfStock} out</span>}
+                </div>
+                {v.categories?.length > 0 && (
+                  <div className="vnd-card-cats">
+                    {v.categories.slice(0, 4).map(c => <span key={c} className="mm-category-chip">{c}</span>)}
+                    {v.categories.length > 4 && <span className="mm-category-chip">+{v.categories.length - 4} more</span>}
+                  </div>
+                )}
+                <button className="vnd-view-btn">View Products →</button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function StubTab({ icon, title, description }) {
   return (
     <div className="mm-stub">
@@ -1151,6 +1476,399 @@ function AlertsTab({ token }) {
   );
 }
 
+// ─── CRM Intelligence Tab ────────────────────────────────────────────────────
+function fmt$(n) { return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmtN(n) { return Number(n).toLocaleString('en-US'); }
+
+function KpiCard({ icon, label, value, sub, accent }) {
+  return (
+    <div className="crm-kpi-card" style={{ '--accent': accent }}>
+      <div className="crm-kpi-icon">{icon}</div>
+      <div className="crm-kpi-body">
+        <p className="crm-kpi-label">{label}</p>
+        <p className="crm-kpi-value">{value}</p>
+        {sub && <p className="crm-kpi-sub">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function BarRow({ label, count, max, color }) {
+  const pct = max > 0 ? (count / max) * 100 : 0;
+  return (
+    <div className="crm-bar-row">
+      <span className="crm-bar-label">{label}</span>
+      <div className="crm-bar-track">
+        <div className="crm-bar-fill" style={{ width: `${pct}%`, background: color }} />
+      </div>
+      <span className="crm-bar-count">{fmtN(count)}</span>
+    </div>
+  );
+}
+
+function AiText({ text }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <span>
+      {parts.map((p, i) =>
+        p.startsWith('**') && p.endsWith('**')
+          ? <strong key={i}>{p.slice(2, -2)}</strong>
+          : <span key={i}>{p}</span>
+      )}
+    </span>
+  );
+}
+
+const URGENCY_STYLE = {
+  critical: { bg: '#fee2e2', color: '#991b1b', label: 'CRITICAL' },
+  high:     { bg: '#fef3c7', color: '#92400e', label: 'HIGH'     },
+  medium:   { bg: '#e0f2fe', color: '#075985', label: 'MEDIUM'   },
+};
+
+function UrgencyBadge({ urgency }) {
+  const s = URGENCY_STYLE[urgency] || URGENCY_STYLE.medium;
+  return (
+    <span className="crm-urgency-badge" style={{ background: s.bg, color: s.color }}>
+      {s.label}
+    </span>
+  );
+}
+
+function TrendPill({ pct }) {
+  const up = pct >= 0;
+  return (
+    <span className="crm-trend-pill" style={{ background: up ? '#d1fae5' : '#fee2e2', color: up ? '#065f46' : '#991b1b' }}>
+      {up ? '▲' : '▼'} {Math.abs(pct)}%
+    </span>
+  );
+}
+
+const CRM_CAT_COLORS   = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6'];
+const CRM_BRAND_COLORS = ['#f97316','#06b6d4','#84cc16','#e11d48','#7c3aed','#0ea5e9','#d97706','#059669'];
+const CRM_SUGGESTIONS  = [
+  'What should I order this week?',
+  'Which products will run out of stock soonest?',
+  'Which category has the most growth opportunity?',
+  'What products are wishlisted but not purchased?',
+  'How can we reduce lapsed customers?',
+];
+
+function CrmTab({ token }) {
+  const [activeTab,   setActiveTab]   = useState('dashboard');
+  const [crmData,     setCrmData]     = useState(null);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [dataError,   setDataError]   = useState(null);
+  const [predData,    setPredData]    = useState(null);
+  const [predLoading, setPredLoading] = useState(false);
+  const [predError,   setPredError]   = useState(null);
+  const [messages,    setMessages]    = useState([
+    { role: 'assistant', content: 'Hi! I\'m your CRM analyst. Ask me anything about your customers, sales trends, top products, or how to grow revenue.' }
+  ]);
+  const [input,       setInput]       = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const loadData = useCallback(async () => {
+    if (!token) return;
+    setDataLoading(true); setDataError(null);
+    try {
+      const r = await fetch(`${API_URL}/api/admin/crm-insights`, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await r.json();
+      if (d.success) setCrmData(d.data);
+      else setDataError(d.message || 'Failed to load CRM data.');
+    } catch { setDataError('Could not reach the server.'); }
+    finally { setDataLoading(false); }
+  }, [token]);
+
+  const loadPredictions = useCallback(async () => {
+    if (!token) return;
+    setPredLoading(true); setPredError(null);
+    try {
+      const r = await fetch(`${API_URL}/api/admin/crm-predictions`, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await r.json();
+      if (d.success) setPredData(d.data);
+      else setPredError(d.message || 'Failed to load predictions.');
+    } catch { setPredError('Could not reach the server.'); }
+    finally { setPredLoading(false); }
+  }, [token]);
+
+  useEffect(() => { if (!crmData) loadData(); }, [crmData, loadData]);
+  useEffect(() => { if (activeTab === 'predictions' && !predData) loadPredictions(); }, [activeTab, predData, loadPredictions]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const sendMessage = async () => {
+    const text = input.trim();
+    if (!text || chatLoading) return;
+    setInput('');
+    const updated = [...messages, { role: 'user', content: text }];
+    setMessages(updated);
+    setChatLoading(true);
+    try {
+      const r = await fetch(`${API_URL}/api/admin/crm-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ message: text, history: updated }),
+      });
+      const d = await r.json();
+      setMessages(prev => [...prev, { role: 'assistant', content: d.success ? d.response : (d.message || 'Something went wrong.') }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Could not reach the server.' }]);
+    } finally { setChatLoading(false); }
+  };
+
+  const handleKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
+
+  const maxCat   = crmData?.topCategories?.[0]?.count || 1;
+  const maxBrand = crmData?.topBrands?.[0]?.count     || 1;
+
+  return (
+    <div className="mm-orders-tab crm-tab-page">
+      {/* ── Sub-tab bar ── */}
+      <div className="crm-subtab-bar">
+        <div className="crm-subtab-left">
+          <button className={`crm-subtab-btn ${activeTab === 'dashboard'   ? 'crm-subtab-btn--active' : ''}`} onClick={() => setActiveTab('dashboard')}>📈 Dashboard</button>
+          <button className={`crm-subtab-btn ${activeTab === 'predictions' ? 'crm-subtab-btn--active' : ''}`} onClick={() => setActiveTab('predictions')}>🔮 Predictions</button>
+          <button className={`crm-subtab-btn ${activeTab === 'chat'        ? 'crm-subtab-btn--active' : ''}`} onClick={() => setActiveTab('chat')}>🤖 Ask AI</button>
+        </div>
+        <button
+          className="crm-subtab-refresh"
+          onClick={() => { loadData(); loadPredictions(); }}
+          disabled={dataLoading || predLoading}
+          title="Refresh CRM data"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" className={dataLoading || predLoading ? 'crm-spin' : ''}>
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          Refresh
+        </button>
+      </div>
+
+      {/* ── Dashboard ── */}
+      {activeTab === 'dashboard' && (
+        <div className="crm-tab-body">
+          {dataLoading && !crmData && (
+            <div className="crm-loading"><div className="crm-spinner" /><p>Loading CRM data…</p></div>
+          )}
+          {dataError && (
+            <div className="crm-error"><span>⚠️</span><p>{dataError}</p><button onClick={loadData}>Retry</button></div>
+          )}
+          {crmData && (
+            <>
+              <div className="crm-kpi-grid">
+                <KpiCard icon="📦" label="Avg Orders / Customer" value={crmData.overview.avgOrdersPerCustomer}     accent="#6366f1" sub={`${fmtN(crmData.overview.totalOrders)} total orders`} />
+                <KpiCard icon="💰" label="Avg Spend / Customer"  value={fmt$(crmData.overview.avgSpendPerCustomer)} accent="#10b981" sub={`${fmt$(crmData.overview.totalRevenue)} lifetime revenue`} />
+                <KpiCard icon="🔁" label="Repeat Purchase Rate"  value={`${crmData.overview.repeatRate}%`}         accent="#f59e0b" sub={`${fmtN(crmData.overview.repeatCustomers)} repeat buyers`} />
+                <KpiCard icon="⭐" label="High-Value Customers"  value={fmtN(crmData.overview.highValueCustomers)} accent="#ec4899" sub="Top 20% by lifetime spend" />
+                <KpiCard icon="😴" label="Lapsed Customers"      value={fmtN(crmData.overview.lapsedCustomers)}    accent="#ef4444" sub="No order in 60+ days" />
+                <KpiCard icon="🔄" label="Active Subscriptions"  value={fmtN(crmData.overview.activeSubscriptions)}accent="#8b5cf6" sub="Subscribe & Save members" />
+              </div>
+              {crmData.topCategories.length > 0 && (
+                <div className="crm-section">
+                  <h3 className="crm-section-title">🏷️ Top Categories by Units Sold</h3>
+                  <div className="crm-bars">
+                    {crmData.topCategories.map((c, i) => <BarRow key={c.name} label={c.name} count={c.count} max={maxCat} color={CRM_CAT_COLORS[i % CRM_CAT_COLORS.length]} />)}
+                  </div>
+                </div>
+              )}
+              {crmData.topBrands.length > 0 && (
+                <div className="crm-section">
+                  <h3 className="crm-section-title">⭐ Top Brands by Units Sold</h3>
+                  <div className="crm-bars">
+                    {crmData.topBrands.map((b, i) => <BarRow key={b.name} label={b.name} count={b.count} max={maxBrand} color={CRM_BRAND_COLORS[i % CRM_BRAND_COLORS.length]} />)}
+                  </div>
+                </div>
+              )}
+              {crmData.topSearches.length > 0 && (
+                <div className="crm-section">
+                  <h3 className="crm-section-title">🔍 Top Search Terms</h3>
+                  <div className="crm-tags">
+                    {crmData.topSearches.map((s, i) => (
+                      <span key={s.term} className="crm-tag" style={{ opacity: 1 - i * 0.07 }}>{s.term} <strong>{s.count}</strong></span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {crmData.topWishlisted.length > 0 && (
+                <div className="crm-section">
+                  <h3 className="crm-section-title">❤️ Most Wishlisted Products</h3>
+                  <div className="crm-wish-list">
+                    {crmData.topWishlisted.map((w, i) => (
+                      <div key={w.name} className="crm-wish-row">
+                        <span className="crm-wish-rank">#{i + 1}</span>
+                        <div className="crm-wish-info"><span className="crm-wish-name">{w.name}</span>{w.category && <span className="crm-wish-cat">{w.category}</span>}</div>
+                        <span className="crm-wish-count">{w.count} saves</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {crmData.topProducts.length > 0 && (
+                <div className="crm-section">
+                  <h3 className="crm-section-title">📦 Best-Selling Products</h3>
+                  <div className="crm-wish-list">
+                    {crmData.topProducts.map((p, i) => (
+                      <div key={p.name} className="crm-wish-row">
+                        <span className="crm-wish-rank">#{i + 1}</span>
+                        <div className="crm-wish-info"><span className="crm-wish-name">{p.name}</span>{p.brand && <span className="crm-wish-cat">{p.brand} · {p.category}</span>}</div>
+                        <span className="crm-wish-count">{p.count} sold</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {crmData.topCategories.length === 0 && crmData.topBrands.length === 0 && (
+                <div className="crm-empty"><span>📭</span><p>No order data yet. CRM insights will populate once customers start purchasing.</p></div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Predictions ── */}
+      {activeTab === 'predictions' && (
+        <div className="crm-tab-body">
+          {predLoading && !predData && (
+            <div className="crm-loading"><div className="crm-spinner" /><p>Analysing stock & velocity…</p></div>
+          )}
+          {predError && (
+            <div className="crm-error"><span>⚠️</span><p>{predError}</p><button onClick={loadPredictions}>Retry</button></div>
+          )}
+          {predData && (
+            <>
+              {(predData.meta.outOfStockCount > 0 || predData.meta.lowStockCount > 0) && (
+                <div className="crm-alert-bar">
+                  {predData.meta.outOfStockCount > 0 && <span className="crm-alert-chip crm-alert-chip--red">🚨 {predData.meta.outOfStockCount} out of stock</span>}
+                  {predData.meta.lowStockCount   > 0 && <span className="crm-alert-chip crm-alert-chip--amber">⚠️ {predData.meta.lowStockCount} low stock</span>}
+                  {predData.meta.activeSubCount  > 0 && <span className="crm-alert-chip crm-alert-chip--blue">🔄 {predData.meta.activeSubCount} active subscriptions</span>}
+                </div>
+              )}
+              <div className="crm-section">
+                <h3 className="crm-section-title">🛒 Reorder Now — Priority List</h3>
+                {predData.urgentReorders.length === 0 ? (
+                  <div className="crm-pred-empty"><span>✅</span><p>All selling products are currently in stock.</p></div>
+                ) : (
+                  <div className="crm-reorder-list">
+                    {predData.urgentReorders.map((p, i) => (
+                      <div key={i} className={`crm-reorder-card crm-reorder-card--${p.urgency}`}>
+                        <div className="crm-reorder-top"><UrgencyBadge urgency={p.urgency} /><TrendPill pct={p.trendPct} /></div>
+                        <p className="crm-reorder-name">{p.name}</p>
+                        <p className="crm-reorder-meta">{p.brand} · {p.category}</p>
+                        <div className="crm-reorder-stats">
+                          <div className="crm-reorder-stat"><span className="crm-reorder-stat-label">Velocity</span><span className="crm-reorder-stat-val">{p.weeklyVelocity} / wk</span></div>
+                          <div className="crm-reorder-stat"><span className="crm-reorder-stat-label">Suggest</span><span className="crm-reorder-stat-val crm-reorder-qty">{p.suggestedQty} units</span></div>
+                        </div>
+                        {p.vendor && p.vendor !== 'Unknown vendor' && <p className="crm-reorder-vendor">🤝 {p.vendor}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {predData.trending.length > 0 && (
+                <div className="crm-section">
+                  <h3 className="crm-section-title">🚀 Trending — Stock Up Before They Spike</h3>
+                  <div className="crm-wish-list">
+                    {predData.trending.map((p, i) => (
+                      <div key={i} className="crm-wish-row">
+                        <span className="crm-wish-rank">#{i + 1}</span>
+                        <div className="crm-wish-info"><span className="crm-wish-name">{p.name}</span><span className="crm-wish-cat">{p.brand} · {p.category}</span></div>
+                        <TrendPill pct={p.trendPct} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {predData.subscriptionForecast.length > 0 && (
+                <div className="crm-section">
+                  <h3 className="crm-section-title">🔄 Subscription Demand — Next 30 Days</h3>
+                  <p className="crm-section-sub">Guaranteed units needed to fulfil active subscriptions</p>
+                  <div className="crm-wish-list">
+                    {predData.subscriptionForecast.map((s, i) => (
+                      <div key={i} className="crm-wish-row">
+                        <span className="crm-wish-rank">#{i + 1}</span>
+                        <div className="crm-wish-info"><span className="crm-wish-name">{s.name}</span><span className="crm-wish-cat">{s.subscriberCount} subscriber{s.subscriberCount !== 1 ? 's' : ''}</span></div>
+                        <span className="crm-wish-count">{s.forecastedUnits} units</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {predData.wishlistGap.length > 0 && (
+                <div className="crm-section">
+                  <h3 className="crm-section-title">❤️ High Intent, Low Conversion</h3>
+                  <p className="crm-section-sub">Wishlisted heavily but purchased rarely — prime promotion targets</p>
+                  <div className="crm-wish-list">
+                    {predData.wishlistGap.map((w, i) => (
+                      <div key={i} className="crm-wish-row">
+                        <span className="crm-wish-rank">#{i + 1}</span>
+                        <div className="crm-wish-info"><span className="crm-wish-name">{w.name}</span><span className="crm-wish-cat">{w.category}</span></div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span className="crm-wish-count">{w.saves} saves</span>
+                          <span style={{ display: 'block', fontSize: '0.68rem', color: '#94a3b8' }}>{w.recentSales} sold</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {predData.urgentReorders.length === 0 && predData.trending.length === 0 && (
+                <div className="crm-empty"><span>📊</span><p>Place some orders to start generating predictive insights.</p></div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Ask AI ── */}
+      {activeTab === 'chat' && (
+        <div className="crm-tab-body crm-tab-chat">
+          {messages.length === 1 && (
+            <div className="crm-suggestions">
+              <p className="crm-suggestions-label">Try asking:</p>
+              {CRM_SUGGESTIONS.map(q => (
+                <button key={q} className="crm-suggestion-chip" onClick={() => setInput(q)}>{q}</button>
+              ))}
+            </div>
+          )}
+          <div className="crm-messages crm-messages--inline">
+            {messages.map((m, i) => (
+              <div key={i} className={`crm-msg crm-msg--${m.role}`}>
+                {m.role === 'assistant' && <span className="crm-msg-avatar">🤖</span>}
+                <div className="crm-msg-bubble">
+                  {m.content.split('\n').map((line, li) => (
+                    <p key={li} style={{ margin: li === 0 ? 0 : '6px 0 0' }}><AiText text={line} /></p>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className="crm-msg crm-msg--assistant">
+                <span className="crm-msg-avatar">🤖</span>
+                <div className="crm-msg-bubble crm-msg-bubble--typing"><span /><span /><span /></div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+          <div className="crm-input-row crm-input-row--inline">
+            <textarea
+              className="crm-input"
+              placeholder="Ask about customers, sales trends, categories…"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKey}
+              rows={1}
+              disabled={chatLoading}
+            />
+            <button className="crm-send-btn" onClick={sendMessage} disabled={!input.trim() || chatLoading} title="Send">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function MarketplaceManager() {
   const { user, isAuthenticated, token } = useContext(AuthContext);
@@ -1225,9 +1943,10 @@ export default function MarketplaceManager() {
     { id: 'subscriptions', label: '🔄 Subscriptions'    },
     { id: 'inventory',     label: '🏪 Inventory'        },
     { id: 'alerts',        label: '🔔 Stock Alerts'     },
-    { id: 'vendors',       label: '🤝 Vendors',          comingSoon: true },
+    { id: 'vendors',       label: '🤝 Vendors'             },
     { id: 'images',        label: '🖼 Images'           },
     { id: 'payments',      label: '💳 Payments'         },
+    { id: 'crm',           label: '📊 CRM Intelligence' },
   ];
 
   return (
@@ -1322,11 +2041,10 @@ export default function MarketplaceManager() {
               />
             )}
             {activeTab === 'vendors' && (
-              <StubTab
-                icon="🤝"
-                title="Vendor Management"
-                description="Manage your supplier relationships, purchase orders, and vendor performance."
-              />
+              <VendorsTab token={token} />
+            )}
+            {activeTab === 'crm' && (
+              <CrmTab token={token} />
             )}
           </>
         )}
