@@ -207,3 +207,59 @@
     font-size: 0.9rem;
   }
 }
+
+/* ── Role chooser ─────────────────────────────────────────────────────────── */
+.login-card--chooser { max-width: 520px; }
+
+.login-role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.login-role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  font-family: inherit;
+}
+
+.login-role-card:hover {
+  border-color: #6366f1;
+  background: #eef2ff;
+  transform: translateY(-2px);
+}
+
+.login-role-icon { font-size: 2.5rem; }
+
+.login-role-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.login-role-sub {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.login-back-role {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+.login-back-role:hover { text-decoration: underline; }

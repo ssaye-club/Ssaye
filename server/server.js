@@ -44,6 +44,8 @@ const inventoryRoutes        = require('./routes/inventory');
 const wishlistRoutes         = require('./routes/wishlist');
 const reviewRoutes           = require('./routes/reviews');
 const adminCrmRoutes         = require('./routes/adminCrm');
+const vendorAuthRoutes       = require('./routes/vendorAuth');
+const vendorProductRoutes    = require('./routes/vendorProducts');
 app.use('/api/auth', authRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/superadmin', superAdminRoutes);
@@ -60,6 +62,8 @@ app.use('/api/inventory',      inventoryRoutes);
 app.use('/api/wishlist',       wishlistRoutes);
 app.use('/api/reviews',        reviewRoutes);
 app.use('/api/admin',          adminCrmRoutes);
+app.use('/api/vendor/auth',    vendorAuthRoutes);
+app.use('/api/vendor/products',vendorProductRoutes);
 
 // Basic routes
 app.get('/api/health', (req, res) => {

@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const Vendor = require('../models/Vendor');
+const VendorProduct = require('../models/VendorProduct');
 const superAdminMiddleware = require('../middleware/superAdmin');
 
 // @route   GET /api/superadmin/users
@@ -289,6 +291,98 @@ router.put('/users/:id/toggle-premium', superAdminMiddleware, async (req, res) =
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ── GET /api/superadmin/vendors — list all vendors ───────────────────────────
+router.get('/vendors', superAdminMiddleware, async (req, res) => {
+  try {
+    const vendors = await Vendor.find().select('-password').sort({ createdAt: -1 });
+    res.json({ success: true, vendors });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ── PATCH /api/superadmin/vendors/:id/status — approve / suspend ─────────────
+router.patch('/vendors/:id/status', superAdminMiddleware, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['approved', 'suspended', 'pending'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+    const vendor = await Vendor.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).select('-password');
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+    res.json({ success: true, vendor });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ── PATCH /api/superadmin/vendors/:id/cert — review vendor govt cert ─────────
+router.patch('/vendors/:id/cert', superAdminMiddleware, async (req, res) => {
+  try {
+    const { status, adminNotes } = req.body;
+    if (!['verified', 'rejected', 'pending_review'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid cert status' });
+    }
+    const vendor = await Vendor.findById(req.params.id);
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+    vendor.govtCert.status     = status;
+    vendor.govtCert.adminNotes = adminNotes || '';
+    vendor.govtCert.reviewedAt = new Date();
+    await vendor.save();
+    res.json({ success: true, govtCert: vendor.govtCert });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ── GET /api/superadmin/vendor-products — all vendor products with certs ──────
+router.get('/vendor-products', superAdminMiddleware, async (req, res) => {
+  try {
+    const products = await VendorProduct.find({ 'certifications.0': { $exists: true } })
+      .select('-imageData -pricingRules')
+      .sort({ createdAt: -1 });
+    res.json({ success: true, products });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ── PATCH /api/superadmin/vendor-products/:id/cert/:certType — review product cert
+router.patch('/vendor-products/:id/cert/:certType', superAdminMiddleware, async (req, res) => {
+  try {
+    const { status, adminNotes } = req.body;
+    if (!['verified', 'rejected', 'pending_review'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid cert status' });
+    }
+    const product = await VendorProduct.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+    const cert = product.certifications.find(c => c.certType === req.params.certType);
+    if (!cert) return res.status(404).json({ success: false, message: 'Certification not found' });
+
+    cert.status     = status;
+    cert.adminNotes = adminNotes || '';
+    cert.reviewedAt = new Date();
+
+    // Sync badge: set if verified, clear if rejected and badge matches this cert type
+    if (status === 'verified') {
+      product.badge = cert.certType;
+    } else if (status === 'rejected' && product.badge === cert.certType) {
+      product.badge = null;
+    }
+
+    await product.save();
+    res.json({ success: true, certifications: product.certifications, badge: product.badge });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

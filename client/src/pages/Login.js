@@ -4,6 +4,7 @@ import './Login.css';
 
 function Login() {
   const navigate = useNavigate();
+  const [role, setRole] = useState(null); // null = chooser, 'customer' = form
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -61,9 +62,34 @@ function Login() {
     }
   };
 
+  // ── Role chooser screen ──────────────────────────────────────────────────────
+  if (!role) {
+    return (
+      <div className="login-container">
+        <div className="login-card login-card--chooser">
+          <h1>Welcome to Ssaye</h1>
+          <p className="login-subtitle">How would you like to sign in?</p>
+          <div className="login-role-grid">
+            <button className="login-role-card" onClick={() => setRole('customer')}>
+              <span className="login-role-icon">👤</span>
+              <span className="login-role-label">Customer</span>
+              <span className="login-role-sub">Shop South Asian groceries</span>
+            </button>
+            <button className="login-role-card" onClick={() => navigate('/vendor/login')}>
+              <span className="login-role-icon">🏪</span>
+              <span className="login-role-label">Vendor</span>
+              <span className="login-role-sub">Manage your store & products</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="login-container">
       <div className="login-card">
+        <button className="login-back-role" onClick={() => setRole(null)}>← Back</button>
         <h1>Welcome Back</h1>
         <p className="login-subtitle">Login to your Ssaye account</p>
 

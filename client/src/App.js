@@ -23,10 +23,13 @@ import Settings from './pages/Settings';
 import Marketplace from './pages/Marketplace';
 import ProductDetail from './pages/ProductDetail';
 import MarketplaceManager from './pages/MarketplaceManager';
+import VendorLogin    from './pages/VendorLogin';
+import VendorRegister from './pages/VendorRegister';
+import VendorDashboard from './pages/VendorDashboard';
 import './App.css';
 
 const MARKETPLACE_PATHS = ['/marketplace', '/product'];
-const NO_BOT_PATHS      = ['/admin', '/superadmin', '/marketplace-manager'];
+const NO_BOT_PATHS      = ['/admin', '/superadmin', '/marketplace-manager', '/vendor'];
 
 function BotRouter() {
   const { pathname } = useLocation();
@@ -61,6 +64,9 @@ function App() {
                 <Route path="/premium" element={<Premium />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/marketplace-manager" element={<MarketplaceManager />} />
+                <Route path="/vendor/login"     element={<VendorLogin />} />
+                <Route path="/vendor/register"  element={<VendorRegister />} />
+                <Route path="/vendor/dashboard" element={<VendorDashboard />} />
               </Routes>
             </main>
             <BotRouter />

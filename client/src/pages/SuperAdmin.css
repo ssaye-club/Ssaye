@@ -2600,3 +2600,54 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Vendor Approvals Tab ─────────────────────────────────────────────────── */
+.sa-vendors-section { padding: 1.5rem 0; }
+
+.sa-vendor-list { display: flex; flex-direction: column; gap: 1rem; }
+
+.sa-vendor-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  transition: border-color 0.15s;
+}
+.sa-vendor-card:hover { border-color: #c7d2fe; }
+
+.sa-vendor-info { flex: 1; min-width: 0; }
+
+.sa-vendor-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+
+.sa-vendor-name { font-size: 1rem; font-weight: 700; color: #1e293b; }
+
+.sa-vendor-status {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; padding: 0.2rem 0.6rem; border-radius: 20px;
+}
+.sa-vendor-status--pending  { background: #fef3c7; color: #92400e; }
+.sa-vendor-status--approved { background: #d1fae5; color: #065f46; }
+.sa-vendor-status--suspended { background: #fee2e2; color: #991b1b; }
+
+.sa-vendor-detail { font-size: 0.85rem; color: #475569; margin: 0.2rem 0 0; }
+
+.sa-vendor-actions { display: flex; gap: 0.5rem; flex-shrink: 0; flex-wrap: wrap; align-items: flex-start; }
+
+.sa-vendor-btn {
+  padding: 0.45rem 1rem;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.sa-vendor-btn:hover { opacity: 0.8; }
+.sa-vendor-btn--approve  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.sa-vendor-btn--suspend  { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.sa-vendor-btn--pending  { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }

@@ -8,6 +8,8 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import Pagination from '../components/Pagination';
 import './SuperAdmin.css';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 function SuperAdmin() {
   const { user, isAuthenticated, loading: authLoading } = useContext(AuthContext);
   const { showToast } = useToast();
@@ -15,7 +17,13 @@ function SuperAdmin() {
   const [users, setUsers] = useState([]);
   const [pendingInvestments, setPendingInvestments] = useState([]);
   const [approvedInvestments, setApprovedInvestments] = useState([]);
-  const [activeTab, setActiveTab] = useState('users'); // 'users', 'investments', 'approved', or 'opportunities'
+  const [activeTab, setActiveTab] = useState('users'); // 'users', 'investments', 'approved', 'opportunities', 'vendors'
+  const [vendors,    setVendors]    = useState([]);
+  const [vendorsLoading, setVendorsLoading] = useState(false);
+  const [inviteCopied,   setInviteCopied]   = useState(false);
+  const [vendorProducts, setVendorProducts] = useState([]);
+  const [vendorProductsLoading, setVendorProductsLoading] = useState(false);
+  const [certNotes, setCertNotes] = useState({}); // { [vendorId|productId+certType]: noteText }
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [selectedInvestment, setSelectedInvestment] = useState(null);
   const [approvalNotes, setApprovalNotes] = useState('');
@@ -87,8 +95,101 @@ function SuperAdmin() {
       fetchPendingInvestments();
       fetchApprovedInvestments();
       fetchOpportunities();
+      fetchVendors();
     }
   }, [isAuthenticated, user]);
+
+  const fetchVendors = async () => {
+    setVendorsLoading(true);
+    try {
+      const authToken = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/superadmin/vendors`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      const data = await res.json();
+      if (data.success) setVendors(data.vendors);
+    } catch { /* silent */ }
+    finally { setVendorsLoading(false); }
+  };
+
+  const handleVendorStatus = async (vendorId, status) => {
+    try {
+      const authToken = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/superadmin/vendors/${vendorId}/status`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body:    JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setVendors(prev => prev.map(v => v._id === vendorId ? data.vendor : v));
+      }
+    } catch { /* silent */ }
+  };
+
+  const fetchVendorProducts = async () => {
+    setVendorProductsLoading(true);
+    try {
+      const authToken = localStorage.getItem('token');
+      const res  = await fetch(`${API_URL}/api/superadmin/vendor-products`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      const data = await res.json();
+      if (data.success) setVendorProducts(data.products);
+    } catch { /* silent */ }
+    finally { setVendorProductsLoading(false); }
+  };
+
+  const handleVendorCert = async (vendorId, status, notes) => {
+    try {
+      const authToken = localStorage.getItem('token');
+      const res  = await fetch(`${API_URL}/api/superadmin/vendors/${vendorId}/cert`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body:    JSON.stringify({ status, adminNotes: notes || '' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setVendors(prev => prev.map(v => v._id === vendorId ? { ...v, govtCert: data.govtCert } : v));
+        showToast(`Certificate ${status === 'verified' ? 'verified' : 'rejected'}`, status === 'verified' ? 'success' : 'error');
+      }
+    } catch { showToast('Could not update certificate', 'error'); }
+  };
+
+  const handleProductCert = async (productId, certType, status, notes) => {
+    try {
+      const authToken = localStorage.getItem('token');
+      const res  = await fetch(`${API_URL}/api/superadmin/vendor-products/${productId}/cert/${certType}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body:    JSON.stringify({ status, adminNotes: notes || '' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setVendorProducts(prev => prev.map(p => p._id === productId ? { ...p, certifications: data.certifications, badge: data.badge } : p));
+        showToast(`${certType} cert ${status === 'verified' ? 'verified — badge is now live' : 'rejected'}`, status === 'verified' ? 'success' : 'error');
+      }
+    } catch { showToast('Could not update certificate', 'error'); }
+  };
+
+  const generateInviteLink = async () => {
+    try {
+      const authToken = localStorage.getItem('token');
+      const res  = await fetch(`${API_URL}/api/vendor/auth/invite`, {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      const data = await res.json();
+      if (!data.success) { showToast('Failed to generate invite link', 'error'); return; }
+      const link = `${window.location.origin}/vendor/register?invite=${data.token}`;
+      await navigator.clipboard.writeText(link);
+      setInviteCopied(true);
+      showToast('Invite link copied to clipboard! Valid for 72 hours.', 'success');
+      setTimeout(() => setInviteCopied(false), 3000);
+    } catch {
+      showToast('Could not generate invite link', 'error');
+    }
+  };
 
   // Lock/unlock body scroll when modals are open
   useEffect(() => {
@@ -850,11 +951,17 @@ function SuperAdmin() {
           >
             Approved Investments ({approvedInvestments.length})
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'opportunities' ? 'active' : ''}`}
             onClick={() => setActiveTab('opportunities')}
           >
             Opportunities ({opportunities.length})
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'vendors' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('vendors'); fetchVendors(); }}
+          >
+            🏪 Vendor Approvals ({vendors.filter(v => v.status === 'pending').length})
           </button>
         </div>
 
@@ -2056,6 +2163,191 @@ function SuperAdmin() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vendor Approvals Tab */}
+      {activeTab === 'vendors' && (
+        <div className="sa-vendors-section">
+          <div className="section-header-with-action" style={{ marginBottom: '1.5rem' }}>
+            <h2 className="section-title">🏪 Vendor Approvals</h2>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={generateInviteLink}
+                style={{ padding: '0.5rem 1rem', border: '1px solid #c7d2fe', borderRadius: 8, background: inviteCopied ? '#d1fae5' : '#eef2ff', color: inviteCopied ? '#065f46' : '#4f46e5', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, transition: 'background 0.2s' }}
+              >
+                {inviteCopied ? '✅ Copied!' : '🔗 Generate Invite Link'}
+              </button>
+              <button className="btn-refresh" onClick={fetchVendors} style={{ padding: '0.5rem 1rem', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: '0.875rem' }}>
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Sub-tabs within vendors section */}
+          <div style={{ display:'flex', gap:0, borderBottom:'2px solid #e2e8f0', marginBottom:'1.5rem' }}>
+            {['registrations','certifications'].map(st => (
+              <button
+                key={st}
+                onClick={() => { if (st === 'certifications') fetchVendorProducts(); }}
+                style={{ padding:'0.6rem 1.25rem', border:'none', background:'transparent', borderBottom: st === 'registrations' ? '2px solid #6366f1' : '2px solid transparent', marginBottom:'-2px', fontWeight:600, fontSize:'0.875rem', color: st === 'registrations' ? '#6366f1' : '#64748b', cursor:'pointer', textTransform:'capitalize' }}
+              >
+                {st === 'registrations' ? '🏪 Vendor Registrations' : '🏅 Product Certifications'}
+              </button>
+            ))}
+          </div>
+
+          {vendorsLoading ? (
+            <div className="loading-state"><p>Loading vendors…</p></div>
+          ) : vendors.length === 0 ? (
+            <div className="empty-state"><p>No vendor registrations yet.</p></div>
+          ) : (
+            <div className="sa-vendor-list">
+              {vendors.map(v => {
+                const cert     = v.govtCert;
+                const noteKey  = `vendor-${v._id}`;
+                const CERT_COLORS = { not_submitted:'#94a3b8', pending_review:'#b45309', verified:'#065f46', rejected:'#991b1b' };
+                const CERT_BG    = { not_submitted:'#f1f5f9', pending_review:'#fef3c7', verified:'#d1fae5', rejected:'#fee2e2' };
+                const certStatus = cert?.status || 'not_submitted';
+                return (
+                  <div key={v._id} className="sa-vendor-card">
+                    {/* ── Vendor header row ── */}
+                    <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'1rem', flexWrap:'wrap' }}>
+                      <div className="sa-vendor-info" style={{ flex:1 }}>
+                        <div className="sa-vendor-header">
+                          <span className="sa-vendor-name">{v.businessName}</span>
+                          <span className={`sa-vendor-status sa-vendor-status--${v.status}`}>{v.status}</span>
+                        </div>
+                        <p className="sa-vendor-detail"><strong>Contact:</strong> {v.fullName} · {v.email} · {v.phone}</p>
+                        <p className="sa-vendor-detail"><strong>Business ID:</strong> {v.businessId}</p>
+                        <p className="sa-vendor-detail"><strong>Registered:</strong> {new Date(v.createdAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' })}</p>
+                      </div>
+                      <div className="sa-vendor-actions">
+                        {v.status !== 'approved' && (
+                          <button className="sa-vendor-btn sa-vendor-btn--approve" onClick={() => handleVendorStatus(v._id, 'approved')}>✅ Approve</button>
+                        )}
+                        {v.status !== 'suspended' && (
+                          <button className="sa-vendor-btn sa-vendor-btn--suspend" onClick={() => handleVendorStatus(v._id, 'suspended')}>🚫 Suspend</button>
+                        )}
+                        {v.status === 'suspended' && (
+                          <button className="sa-vendor-btn sa-vendor-btn--pending" onClick={() => handleVendorStatus(v._id, 'pending')}>↩ Reset to Pending</button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ── Govt cert review panel ── */}
+                    <div style={{ borderTop:'1px solid #e2e8f0', marginTop:'1rem', paddingTop:'1rem' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:'0.75rem', marginBottom:'0.5rem', flexWrap:'wrap' }}>
+                        <span style={{ fontSize:'0.82rem', fontWeight:700, color:'#334155' }}>🏛 Govt Certificate</span>
+                        <span style={{ fontSize:'0.72rem', fontWeight:700, padding:'0.15rem 0.55rem', borderRadius:20, background: CERT_BG[certStatus], color: CERT_COLORS[certStatus] }}>
+                          {certStatus.replace('_',' ')}
+                        </span>
+                        {cert?.licenceNumber && (
+                          <span style={{ fontSize:'0.78rem', color:'#64748b' }}>#{cert.licenceNumber} · {cert.regulatoryBody} · {cert.issuingCountry}</span>
+                        )}
+                        {cert?.expiryDate && (
+                          <span style={{ fontSize:'0.75rem', color:'#94a3b8' }}>Expires {new Date(cert.expiryDate).toLocaleDateString()}</span>
+                        )}
+                        {cert?.documentData && (
+                          <a href={cert.documentData} download={cert.documentName || 'certificate'} style={{ fontSize:'0.75rem', color:'#6366f1', textDecoration:'none', fontWeight:600 }}>
+                            📎 Download
+                          </a>
+                        )}
+                      </div>
+                      {certStatus === 'not_submitted' ? (
+                        <p style={{ fontSize:'0.78rem', color:'#94a3b8', fontStyle:'italic', margin:0 }}>No certificate submitted yet.</p>
+                      ) : certStatus === 'pending_review' ? (
+                        <div style={{ display:'flex', gap:'0.6rem', alignItems:'flex-start', flexWrap:'wrap', marginTop:'0.5rem' }}>
+                          <textarea
+                            placeholder="Admin notes (optional)"
+                            value={certNotes[noteKey] || ''}
+                            onChange={e => setCertNotes(n => ({ ...n, [noteKey]: e.target.value }))}
+                            rows={2}
+                            style={{ flex:1, padding:'0.5rem 0.75rem', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:'0.82rem', fontFamily:'inherit', minWidth:180, resize:'vertical' }}
+                          />
+                          <div style={{ display:'flex', flexDirection:'column', gap:'0.4rem' }}>
+                            <button onClick={() => handleVendorCert(v._id, 'verified',  certNotes[noteKey])} style={{ padding:'0.45rem 1rem', background:'#d1fae5', color:'#065f46', border:'1px solid #6ee7b7', borderRadius:8, fontWeight:700, fontSize:'0.8rem', cursor:'pointer' }}>✓ Verify</button>
+                            <button onClick={() => handleVendorCert(v._id, 'rejected',  certNotes[noteKey])} style={{ padding:'0.45rem 1rem', background:'#fee2e2', color:'#991b1b', border:'1px solid #fca5a5', borderRadius:8, fontWeight:700, fontSize:'0.8rem', cursor:'pointer' }}>✕ Reject</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display:'flex', gap:'0.75rem', alignItems:'center', flexWrap:'wrap' }}>
+                          {cert?.adminNotes && <span style={{ fontSize:'0.78rem', color:'#64748b' }}>Note: {cert.adminNotes}</span>}
+                          <button onClick={() => handleVendorCert(v._id, 'pending_review', '')} style={{ padding:'0.35rem 0.85rem', background:'#f1f5f9', color:'#475569', border:'1px solid #e2e8f0', borderRadius:8, fontSize:'0.78rem', cursor:'pointer' }}>↩ Re-open Review</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Product Certifications section ── */}
+          <div style={{ marginTop:'2.5rem' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1rem' }}>
+              <h3 style={{ margin:0, fontSize:'1rem', fontWeight:700, color:'#1e293b' }}>🏅 Product Badge Certifications</h3>
+              <button onClick={fetchVendorProducts} style={{ padding:'0.4rem 0.9rem', border:'1px solid #e2e8f0', borderRadius:8, background:'#fff', fontSize:'0.8rem', cursor:'pointer' }}>🔄 Refresh</button>
+            </div>
+            {vendorProductsLoading ? (
+              <p style={{ color:'#64748b', fontSize:'0.875rem' }}>Loading…</p>
+            ) : vendorProducts.length === 0 ? (
+              <p style={{ color:'#94a3b8', fontSize:'0.875rem', fontStyle:'italic' }}>No product certifications submitted yet.</p>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:'0.75rem' }}>
+                {vendorProducts.map(p => (
+                  <div key={p._id} style={{ background:'#fff', border:'1.5px solid #e2e8f0', borderRadius:14, padding:'1rem 1.25rem' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:'0.75rem', marginBottom:'0.75rem', flexWrap:'wrap' }}>
+                      <span style={{ fontWeight:700, color:'#1e293b', fontSize:'0.9rem' }}>{p.name}</span>
+                      <span style={{ fontSize:'0.75rem', color:'#64748b' }}>{p.vendorBusinessName} · {p.category}</span>
+                    </div>
+                    {p.certifications.map(cert => {
+                      const pk       = `${p._id}-${cert.certType}`;
+                      const cStatus  = cert.status;
+                      const CERT_COLORS = { pending_review:'#b45309', verified:'#065f46', rejected:'#991b1b' };
+                      const CERT_BG    = { pending_review:'#fef3c7', verified:'#d1fae5', rejected:'#fee2e2' };
+                      return (
+                        <div key={cert.certType} style={{ borderTop:'1px solid #f1f5f9', paddingTop:'0.65rem', marginTop:'0.5rem' }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:'0.6rem', flexWrap:'wrap', marginBottom:'0.4rem' }}>
+                            <span style={{ fontSize:'0.8rem', fontWeight:700, color:'#334155' }}>{cert.certType}</span>
+                            <span style={{ fontSize:'0.7rem', fontWeight:700, padding:'0.1rem 0.5rem', borderRadius:20, background: CERT_BG[cStatus], color: CERT_COLORS[cStatus] }}>
+                              {cStatus.replace('_',' ')}
+                            </span>
+                            <span style={{ fontSize:'0.75rem', color:'#64748b' }}>{cert.issuingBody} #{cert.licenceNumber}</span>
+                            {cert.expiryDate && <span style={{ fontSize:'0.72rem', color:'#94a3b8' }}>Exp {new Date(cert.expiryDate).toLocaleDateString()}</span>}
+                            {cert.documentData && (
+                              <a href={cert.documentData} download={cert.documentName || 'cert'} style={{ fontSize:'0.72rem', color:'#6366f1', fontWeight:600, textDecoration:'none' }}>📎 Download</a>
+                            )}
+                          </div>
+                          {cStatus === 'pending_review' && (
+                            <div style={{ display:'flex', gap:'0.5rem', alignItems:'flex-start', flexWrap:'wrap' }}>
+                              <textarea
+                                placeholder="Admin notes (optional)"
+                                value={certNotes[pk] || ''}
+                                onChange={e => setCertNotes(n => ({ ...n, [pk]: e.target.value }))}
+                                rows={2}
+                                style={{ flex:1, padding:'0.45rem 0.7rem', border:'1.5px solid #e2e8f0', borderRadius:8, fontSize:'0.8rem', fontFamily:'inherit', minWidth:160, resize:'vertical' }}
+                              />
+                              <div style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                                <button onClick={() => handleProductCert(p._id, cert.certType, 'verified',  certNotes[pk])} style={{ padding:'0.4rem 0.9rem', background:'#d1fae5', color:'#065f46', border:'1px solid #6ee7b7', borderRadius:8, fontWeight:700, fontSize:'0.78rem', cursor:'pointer' }}>✓ Verify</button>
+                                <button onClick={() => handleProductCert(p._id, cert.certType, 'rejected',  certNotes[pk])} style={{ padding:'0.4rem 0.9rem', background:'#fee2e2', color:'#991b1b', border:'1px solid #fca5a5', borderRadius:8, fontWeight:700, fontSize:'0.78rem', cursor:'pointer' }}>✕ Reject</button>
+                              </div>
+                            </div>
+                          )}
+                          {(cStatus === 'verified' || cStatus === 'rejected') && (
+                            <div style={{ display:'flex', gap:'0.75rem', alignItems:'center', flexWrap:'wrap' }}>
+                              {cert.adminNotes && <span style={{ fontSize:'0.75rem', color:'#64748b' }}>Note: {cert.adminNotes}</span>}
+                              <button onClick={() => handleProductCert(p._id, cert.certType, 'pending_review', '')} style={{ padding:'0.3rem 0.75rem', background:'#f1f5f9', color:'#475569', border:'1px solid #e2e8f0', borderRadius:8, fontSize:'0.75rem', cursor:'pointer' }}>↩ Re-open</button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

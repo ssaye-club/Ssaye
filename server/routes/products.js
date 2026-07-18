@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const VendorProduct  = require('../models/VendorProduct');
 const UserActivity   = require('../models/UserActivity');
 const authMiddleware = require('../middleware/auth');
 
@@ -88,26 +89,57 @@ router.get('/', async (req, res) => {
     const categoryFilter = {};
     if (category && category !== 'All Products') categoryFilter.category = category;
 
-    // Build filter with timeout
     const filter = await Promise.race([
       buildSearchFilter(search, categoryFilter),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Filter build timeout')), 10000)),
     ]);
-    
+
     const sortOpt = SORT_MAP[sortKey] || SORT_MAP.popular;
 
-    // Execute queries with timeout
-    const [products, total] = await Promise.race([
+    // Fetch CSV products and listed vendor products in parallel
+    const [csvProducts, vendorProducts] = await Promise.race([
       Promise.all([
-        Product.find(filter)
-          .sort(sortOpt)
-          .skip((page - 1) * limit)
-          .limit(limit)
-          .lean(),
-        Product.countDocuments(filter),
+        Product.find(filter).sort(sortOpt).lean(),
+        VendorProduct.find({ ...filter, isListed: true }).sort(sortOpt).lean(),
       ]),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 15000)),
     ]);
+
+    // Normalise vendor products to the same shape the frontend expects
+    const normalisedVendor = vendorProducts.map((vp) => ({
+      id: `vp_${vp._id}`,           // string id so it never clashes with numeric CSV ids
+      _id: vp._id,
+      name: vp.name,
+      brand: vp.brand,
+      category: vp.category,
+      price: vp.price,
+      originalPrice: vp.originalPrice || null,
+      rating: vp.rating || 0,
+      reviews: vp.reviews || 0,
+      stock: vp.stock,
+      emoji: vp.emoji || '🛒',
+      // Only surface a badge if the matching product cert is verified
+      badge: (vp.badge && vp.certifications?.some(c => c.certType === vp.badge && c.status === 'verified'))
+        ? vp.badge
+        : null,
+      imageUrl: vp.imageData || vp.imageUrl || null,
+      vendor: vp.vendorBusinessName,
+      isVendorProduct: true,
+    }));
+
+    // Merge and sort the combined list
+    const allProducts = [...csvProducts, ...normalisedVendor];
+    const sortField = Object.keys(sortOpt)[0];
+    const sortDir   = sortOpt[sortField];
+    allProducts.sort((a, b) => {
+      const av = a[sortField] ?? 0;
+      const bv = b[sortField] ?? 0;
+      if (typeof av === 'string') return sortDir === 1 ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir === 1 ? av - bv : bv - av;
+    });
+
+    const total    = allProducts.length;
+    const products = allProducts.slice((page - 1) * limit, page * limit);
 
     res.json({
       success: true,
@@ -119,9 +151,9 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('Products fetch error:', error.message);
     const isTimeoutError = error.message.includes('timeout');
-    res.status(isTimeoutError ? 408 : 500).json({ 
-      success: false, 
-      message: isTimeoutError ? 'Request timeout - please try again' : 'Server error' 
+    res.status(isTimeoutError ? 408 : 500).json({
+      success: false,
+      message: isTimeoutError ? 'Request timeout - please try again' : 'Server error',
     });
   }
 });
@@ -139,18 +171,18 @@ router.get('/category-counts', async (req, res) => {
       new Promise((_, reject) => setTimeout(() => reject(new Error('Filter build timeout')), 10000)),
     ]);
     
-    // Execute aggregation with timeout
-    const agg = await Promise.race([
-      Product.aggregate([
-        { $match: filter },
-        { $group: { _id: '$category', count: { $sum: 1 } } },
+    // Aggregate CSV products and listed vendor products in parallel
+    const [agg, vendorAgg] = await Promise.race([
+      Promise.all([
+        Product.aggregate([{ $match: filter }, { $group: { _id: '$category', count: { $sum: 1 } } }]),
+        VendorProduct.aggregate([{ $match: { ...filter, isListed: true } }, { $group: { _id: '$category', count: { $sum: 1 } } }]),
       ]),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Aggregation timeout')), 15000)),
     ]);
-    
+
     const counts = { 'All Products': 0 };
-    for (const { _id, count } of agg) {
-      counts[_id] = count;
+    for (const { _id, count } of [...agg, ...vendorAgg]) {
+      counts[_id] = (counts[_id] || 0) + count;
       counts['All Products'] += count;
     }
     res.json({ success: true, counts });
