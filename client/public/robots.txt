@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /superadmin
+Disallow: /vendor/dashboard
+Disallow: /my-orders
+Disallow: /portfolio
+Disallow: /settings
+Disallow: /marketplace-manager
+
+Sitemap: https://ssaye.club/sitemap.xml

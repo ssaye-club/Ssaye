@@ -24,6 +24,7 @@ function SuperAdmin() {
   const [vendorProducts, setVendorProducts] = useState([]);
   const [vendorProductsLoading, setVendorProductsLoading] = useState(false);
   const [certNotes, setCertNotes] = useState({}); // { [vendorId|productId+certType]: noteText }
+  const [couponForm, setCouponForm] = useState({}); // { [userId]: { pct, days, sending, done } }
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [selectedInvestment, setSelectedInvestment] = useState(null);
   const [approvalNotes, setApprovalNotes] = useState('');
@@ -125,6 +126,32 @@ function SuperAdmin() {
         setVendors(prev => prev.map(v => v._id === vendorId ? data.vendor : v));
       }
     } catch { /* silent */ }
+  };
+
+  const issueCoupon = async (userId) => {
+    const form = couponForm[userId] || {};
+    const pct  = parseInt(form.pct  || 10);
+    const days = parseInt(form.days || 30);
+    setCouponForm(f => ({ ...f, [userId]: { ...f[userId], sending: true, done: false } }));
+    try {
+      const token = localStorage.getItem('token');
+      const res   = await fetch(`${API_URL}/api/coupons/issue`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ userId, discountPct: pct, expiryDays: days }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCouponForm(f => ({ ...f, [userId]: { pct: '', days: '', sending: false, done: true, code: data.coupon.code } }));
+        showToast(`Coupon ${data.coupon.code} issued!`, 'success');
+      } else {
+        showToast(data.message || 'Failed to issue coupon', 'error');
+        setCouponForm(f => ({ ...f, [userId]: { ...f[userId], sending: false } }));
+      }
+    } catch {
+      showToast('Server error issuing coupon', 'error');
+      setCouponForm(f => ({ ...f, [userId]: { ...f[userId], sending: false } }));
+    }
   };
 
   const fetchVendorProducts = async () => {
@@ -1160,6 +1187,40 @@ function SuperAdmin() {
                                 </svg>
                                 {u.isPremium ? 'Remove Premium' : 'Grant Premium'}
                               </button>
+                              {u.isPremium && (
+                                <div className="dropdown-coupon-form">
+                                  <p className="dropdown-coupon-label">🎟 Issue Coupon</p>
+                                  {couponForm[u._id]?.done ? (
+                                    <p className="dropdown-coupon-success">✓ Issued: <strong>{couponForm[u._id].code}</strong></p>
+                                  ) : (
+                                    <div className="dropdown-coupon-inputs">
+                                      <input
+                                        type="number"
+                                        min="1" max="100"
+                                        placeholder="% off"
+                                        value={couponForm[u._id]?.pct || ''}
+                                        onChange={e => setCouponForm(f => ({ ...f, [u._id]: { ...f[u._id], pct: e.target.value } }))}
+                                        onClick={e => e.stopPropagation()}
+                                      />
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        placeholder="Days valid"
+                                        value={couponForm[u._id]?.days || ''}
+                                        onChange={e => setCouponForm(f => ({ ...f, [u._id]: { ...f[u._id], days: e.target.value } }))}
+                                        onClick={e => e.stopPropagation()}
+                                      />
+                                      <button
+                                        className="dropdown-coupon-btn"
+                                        disabled={couponForm[u._id]?.sending}
+                                        onClick={e => { e.stopPropagation(); issueCoupon(u._id); }}
+                                      >
+                                        {couponForm[u._id]?.sending ? '…' : 'Issue'}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                               <button
                                 className="dropdown-item"
                                 onClick={() => toggleDisableUser(u._id, u.isDisabled)}

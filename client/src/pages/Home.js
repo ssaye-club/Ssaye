@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import techCity from '../images/tech-city.avif';
@@ -60,6 +61,15 @@ function Home() {
 
   return (
     <div className="home-page">
+      <Helmet>
+        <title>Ssaye Club — Invest, Live & Grow</title>
+        <meta name="description" content="Ssaye Club is a premium community platform offering real estate investments, South Asian grocery delivery, smart city living, and sustainable farm produce." />
+        <meta property="og:title" content="Ssaye Club — Invest, Live & Grow" />
+        <meta property="og:description" content="Premium investments, authentic South Asian groceries, smart city living and sustainable farms — all in one place." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://ssaye.club" />
+        <link rel="canonical" href="https://ssaye.club" />
+      </Helmet>
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-content">

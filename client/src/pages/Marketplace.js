@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useContext, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { AuthContext } from '../context/AuthContext';
 import './Marketplace.css';
 
@@ -284,21 +285,62 @@ function ProductCard({ product, qty, onAdd, onRemove, onViewDetails, onBuyNow, i
 }
 
 // ─── Cart Page ────────────────────────────────────────────────────────────────
+const PREMIUM_DISCOUNT_PCT       = 10;
+const PREMIUM_DISCOUNT_THRESHOLD = 50;
+
 function CartPage({ cart, products, onAdd, onRemove, onClearItem, onBack, onCheckoutSuccess }) {
-  const { token } = useContext(AuthContext);
+  const { token, user } = useContext(AuthContext);
   const cartItems = products.filter((p) => cart[p.id] > 0);
   const subtotal  = cartItems.reduce((sum, p) => sum + p.price * cart[p.id], 0);
-  const totalQty  = Object.values(cart).reduce((s, q) => s + q, 0);
+  const totalQty  = cartItems.reduce((s, p) => s + cart[p.id], 0);
 
   const [checkingOut,   setCheckingOut]   = useState(false);
   const [checkoutError, setCheckoutError] = useState(null);
-  const [orderDone,     setOrderDone]     = useState(null); // order object on success
+  const [orderDone,     setOrderDone]     = useState(null);
+
+  // Coupon state
+  const [couponInput,    setCouponInput]    = useState('');
+  const [couponApplied,  setCouponApplied]  = useState(null); // { code, discountPct }
+  const [couponError,    setCouponError]    = useState('');
+  const [couponLoading,  setCouponLoading]  = useState(false);
+
+  // Premium discount (client-side preview — server re-validates)
+  const premiumDiscount = user?.isPremium && subtotal >= PREMIUM_DISCOUNT_THRESHOLD
+    ? parseFloat(((subtotal * PREMIUM_DISCOUNT_PCT) / 100).toFixed(2))
+    : 0;
+  const couponDiscount = couponApplied
+    ? parseFloat(((subtotal * couponApplied.discountPct) / 100).toFixed(2))
+    : 0;
+  const total = Math.max(0, subtotal - premiumDiscount - couponDiscount);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const res  = await fetch(`${API_URL}/api/coupons/validate`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ code: couponInput.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCouponApplied({ code: data.code, discountPct: data.discountPct });
+        setCouponInput('');
+      } else {
+        setCouponError(data.message || 'Invalid coupon');
+      }
+    } catch {
+      setCouponError('Could not validate coupon');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
 
   const handleCheckout = async () => {
     setCheckingOut(true);
     setCheckoutError(null);
     try {
-
       const items = cartItems.map((p) => ({
         productId: p.id,
         name:      p.name,
@@ -310,16 +352,13 @@ function CartPage({ cart, products, onAdd, onRemove, onClearItem, onBack, onChec
       }));
       const res = await fetch(`${API_URL}/api/marketplace-orders`, {
         method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ items }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ items, couponCode: couponApplied?.code || null }),
       });
       const data = await res.json();
       if (data.success) {
         setOrderDone(data.order);
-        onCheckoutSuccess(); // clears cart in parent
+        onCheckoutSuccess();
       } else {
         setCheckoutError(data.message || 'Could not place your order. Please try again.');
       }
@@ -341,12 +380,22 @@ function CartPage({ cart, products, onAdd, onRemove, onClearItem, onBack, onChec
           <p className="mp-order-confirmed-msg">
             Thanks for your order. We'll process it shortly and keep you updated.
           </p>
+          {(orderDone.premiumDiscount > 0 || orderDone.couponDiscount > 0) && (
+            <p className="mp-order-confirmed-savings">
+              You saved ${(orderDone.premiumDiscount + orderDone.couponDiscount).toFixed(2)} on this order! 🎁
+            </p>
+          )}
           <p className="mp-order-confirmed-total">
             Total: <strong>${orderDone.total?.toFixed(2)}</strong>
           </p>
-          <button className="mp-cart-back-btn" onClick={onBack} style={{ marginTop: '1.5rem' }}>
-            Continue Shopping
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Link to="/my-orders" className="mp-cart-checkout" style={{ textDecoration: 'none', textAlign: 'center' }}>
+              Track Order
+            </Link>
+            <button className="mp-cart-back-btn mp-cart-back-btn--outline" onClick={onBack}>
+              Continue Shopping
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -360,7 +409,7 @@ function CartPage({ cart, products, onAdd, onRemove, onClearItem, onBack, onChec
           ← Continue Shopping
         </button>
         <h1 className="mp-cart-title">Your Cart</h1>
-        <p className="mp-cart-subtitle">{totalQty} item{totalQty !== 1 ? "s" : ""} in your cart</p>
+        <p className="mp-cart-subtitle">{cartItems.length} product{cartItems.length !== 1 ? "s" : ""} · {totalQty} unit{totalQty !== 1 ? "s" : ""} in your cart</p>
       </div>
 
       {cartItems.length === 0 ? (
@@ -409,17 +458,61 @@ function CartPage({ cart, products, onAdd, onRemove, onClearItem, onBack, onChec
           <div className="mp-cart-summary">
             <h2 className="mp-cart-summary-title">Order Summary</h2>
             <div className="mp-cart-summary-row">
-              <span>Subtotal ({totalQty} items)</span>
+              <span>Subtotal ({totalQty} unit{totalQty !== 1 ? "s" : ""})</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
             <div className="mp-cart-summary-row">
               <span>Delivery</span>
               <span className="mp-cart-free">FREE</span>
             </div>
+
+            {/* Premium discount row */}
+            {user?.isPremium && subtotal >= PREMIUM_DISCOUNT_THRESHOLD && (
+              <div className="mp-cart-summary-row mp-cart-discount-row">
+                <span>⭐ Premium discount (10%)</span>
+                <span className="mp-cart-discount-amt">−${premiumDiscount.toFixed(2)}</span>
+              </div>
+            )}
+            {user?.isPremium && subtotal > 0 && subtotal < PREMIUM_DISCOUNT_THRESHOLD && (
+              <p className="mp-cart-premium-hint">
+                Add ${(PREMIUM_DISCOUNT_THRESHOLD - subtotal).toFixed(2)} more to unlock your 10% premium discount!
+              </p>
+            )}
+
+            {/* Coupon section */}
+            {couponApplied ? (
+              <div className="mp-cart-summary-row mp-cart-discount-row">
+                <span>🎟 Coupon ({couponApplied.code})</span>
+                <span className="mp-cart-discount-amt">
+                  −${couponDiscount.toFixed(2)}
+                  <button className="mp-coupon-remove" onClick={() => setCouponApplied(null)} title="Remove coupon">✕</button>
+                </span>
+              </div>
+            ) : (
+              <div className="mp-coupon-row">
+                <input
+                  className="mp-coupon-input"
+                  type="text"
+                  placeholder="Coupon code"
+                  value={couponInput}
+                  onChange={e => { setCouponInput(e.target.value); setCouponError(''); }}
+                  onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+                />
+                <button
+                  className="mp-coupon-apply"
+                  onClick={handleApplyCoupon}
+                  disabled={couponLoading || !couponInput.trim()}
+                >
+                  {couponLoading ? '…' : 'Apply'}
+                </button>
+                {couponError && <p className="mp-coupon-error">{couponError}</p>}
+              </div>
+            )}
+
             <div className="mp-cart-summary-divider" />
             <div className="mp-cart-summary-row mp-cart-summary-total">
               <span>Total</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>${total.toFixed(2)}</span>
             </div>
             {checkoutError && (
               <p className="mp-checkout-error">{checkoutError}</p>
@@ -522,8 +615,15 @@ function Marketplace() {
   const [fuzzySuggestion, setFuzzySuggestion] = useState(null);
   const [wishlist, setWishlist] = useState(new Set()); // Set of productIds
 
-  // Persist cart to localStorage whenever it changes
-  useEffect(() => { writeCart(cart); }, [cart]);
+  // Persist cart to localStorage whenever it changes, pruning any zero/negative entries
+  useEffect(() => {
+    const clean = Object.fromEntries(Object.entries(cart).filter(([, q]) => q > 0));
+    if (Object.keys(clean).length !== Object.keys(cart).length) {
+      setCart(clean); // triggers another write on next render with the cleaned version
+    } else {
+      writeCart(clean);
+    }
+  }, [cart]);
 
   // Clear in-memory cart immediately when user logs out
   useEffect(() => {
@@ -721,8 +821,9 @@ function Marketplace() {
   const removeFromCart = (productId) => {
     setCart((prev) => {
       const newQty = (prev[productId] || 0) - 1;
-      if (newQty <= 0) { const next = { ...prev }; delete next[productId]; return next; }
-      return { ...prev, [productId]: newQty };
+      const next = { ...prev };
+      if (newQty <= 0) { delete next[productId]; } else { next[productId] = newQty; }
+      return next;
     });
   };
 
@@ -730,14 +831,14 @@ function Marketplace() {
     setCart((prev) => { const next = { ...prev }; delete next[productId]; return next; });
   };
 
-  const clearCart = () => setCart({});
+  const clearCart = () => { setCart({}); writeCart({}); };
 
   const handleBuyNow = (product) => {
     if (!isAuthenticated()) { setShowLoginPrompt(true); return; }
     setBuyNowProduct({ product, quantity: 1 });
   };
 
-  const totalQty = Object.values(cart).reduce((s, q) => s + q, 0);
+  const totalQty = products.filter(p => cart[p.id] > 0).reduce((s, p) => s + cart[p.id], 0);
 
   // ── Cart view ──
   if (showCart) {
@@ -775,6 +876,24 @@ function Marketplace() {
   // ── Marketplace view ──
   return (
     <div className="mp-page">
+      <Helmet>
+        <title>Ssaye Grocery Club — Authentic South Asian Groceries</title>
+        <meta name="description" content="Shop 4,500+ authentic South Asian groceries online — dal, spices, rice, snacks, frozen foods and more. Delivered fresh to your door by Ssaye Grocery Club." />
+        <meta property="og:title" content="Ssaye Grocery Club — Authentic South Asian Groceries" />
+        <meta property="og:description" content="4,500+ South Asian grocery products including dal, spices, rice, snacks and frozen foods. Shop online with Ssaye Grocery Club." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://ssaye.club/marketplace" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Store",
+          "name": "Ssaye Grocery Club",
+          "description": "Authentic South Asian grocery store delivering fresh produce, premium spices, trusted brands and frozen favourites.",
+          "url": "https://ssaye.club/marketplace",
+          "servesCuisine": "South Asian",
+          "priceRange": "$$",
+          "hasMap": "https://ssaye.club/marketplace",
+        })}</script>
+      </Helmet>
       {/* ── Login prompt modal ── */}
       {showLoginPrompt && (
         <LoginPromptModal

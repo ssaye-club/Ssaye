@@ -250,6 +250,9 @@ function Navbar() {
                 <button className="user-menu-btn" onClick={toggleUserMenu}>
                   <span className="user-avatar">{user?.name?.charAt(0).toUpperCase()}</span>
                   <span className="user-name">{user?.name}</span>
+                  {user?.isPremium && (
+                    <span className="user-premium-star" title="Premium Member">★</span>
+                  )}
                   <svg className="dropdown-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
@@ -278,8 +281,17 @@ function Navbar() {
                         Super Admin Dashboard
                       </Link>
                     )}
-                    <Link 
-                      to="/settings" 
+                    {!user?.isAdmin && !user?.isSuperAdmin && (
+                      <Link
+                        to="/my-orders"
+                        className="dropdown-item dropdown-link"
+                        onClick={() => { setUserMenuOpen(false); closeMobileMenu(); }}
+                      >
+                        My Orders
+                      </Link>
+                    )}
+                    <Link
+                      to="/settings"
                       className="dropdown-item dropdown-link"
                       onClick={() => { setUserMenuOpen(false); closeMobileMenu(); }}
                     >

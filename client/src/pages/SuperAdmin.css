@@ -443,6 +443,51 @@
   margin: 0.25rem 0;
 }
 
+/* ── Coupon issuance form inside user dropdown ─────────────────────────────── */
+.dropdown-coupon-form {
+  padding: 0.5rem 0.75rem 0.6rem;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  margin: 0.25rem 0;
+}
+.dropdown-coupon-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6366f1;
+  margin: 0 0 0.4rem;
+}
+.dropdown-coupon-inputs {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.dropdown-coupon-inputs input {
+  width: 72px;
+  padding: 5px 8px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+.dropdown-coupon-inputs input:focus { outline: none; border-color: #6366f1; }
+.dropdown-coupon-btn {
+  padding: 5px 10px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dropdown-coupon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.dropdown-coupon-success {
+  font-size: 0.78rem;
+  color: #059669;
+  margin: 0;
+}
+
 .btn-action {
   padding: 0.625rem 1.25rem;
   border: none;

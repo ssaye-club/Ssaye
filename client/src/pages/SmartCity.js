@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import './SmartCity.css';
 import smartTownshipImage from '../images/smart-township.avif';
 import smartApartmentImage from '../images/smart-apartment.avif';
@@ -17,6 +18,14 @@ function SmartCity() {
 
   return (
     <div className="smart-city-page">
+      <Helmet>
+        <title>Smart City Living — Ssaye Club</title>
+        <meta name="description" content="Discover Ssaye Club's Smart City initiative — tech-enabled townships, smart apartments, and blockchain-powered urban living solutions." />
+        <meta property="og:title" content="Smart City Living — Ssaye Club" />
+        <meta property="og:description" content="Tech-enabled townships and smart apartments powered by AI and blockchain through Ssaye Club." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://ssaye.club/smart-city" />
+      </Helmet>
       {/* Hero Section */}
       <section className="smart-city-hero-section">
         <div className="smart-city-hero-content">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import './Farms.css';
 import hydroponicsImage from '../images/hydroponics.avif';
 import urbanAgricultureImage from '../images/urban-agriculture.avif';
@@ -8,6 +9,14 @@ import roboticFarmImage from '../images/Robotic-farm.jpg';
 function Farms() {
   return (
     <div className="farms-page">
+      <Helmet>
+        <title>Ssaye Farms — Sustainable & Urban Agriculture</title>
+        <meta name="description" content="Ssaye Farms delivers fresh hydroponics, microgreens and urban farm produce. Innovative agricultural solutions for sustainable, healthy living." />
+        <meta property="og:title" content="Ssaye Farms — Sustainable & Urban Agriculture" />
+        <meta property="og:description" content="Fresh hydroponics, microgreens and urban farm produce from Ssaye Farms. Sustainable agricultural solutions for modern living." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://ssaye.club/farms" />
+      </Helmet>
       {/* Hero Section */}
       <section className="farms-hero-section">
         <div className="farms-hero-content">

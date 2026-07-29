@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { AuthContext } from '../context/AuthContext';
 import './ProductDetail.css';
 import './Marketplace.css'; // reuse pd-* and mp-* classes
@@ -400,6 +401,43 @@ export default function ProductDetail() {
 
   return (
     <div className="pdp-page">
+      <Helmet>
+        <title>{product.name} — {product.brand} | Ssaye Grocery Club</title>
+        <meta name="description" content={`Buy ${product.name} by ${product.brand} in the ${product.category} category. ${product.stock === 'In Stock' ? 'In stock' : product.stock} — $${product.price.toFixed(2)} at Ssaye Grocery Club.`} />
+        <meta property="og:title" content={`${product.name} — ${product.brand} | Ssaye Grocery Club`} />
+        <meta property="og:description" content={`${product.name} by ${product.brand}. $${product.price.toFixed(2)} — shop authentic South Asian groceries at Ssaye.`} />
+        <meta property="og:type" content="product" />
+        {product.imageUrl && <meta property="og:image" content={product.imageUrl} />}
+        <link rel="canonical" href={`https://ssaye.club/product/${product.id}`} />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": product.name,
+          "brand": { "@type": "Brand", "name": product.brand },
+          "category": product.category,
+          "image": product.imageUrl || undefined,
+          "offers": {
+            "@type": "Offer",
+            "priceCurrency": "USD",
+            "price": product.price,
+            "availability": product.stock === 'In Stock'
+              ? "https://schema.org/InStock"
+              : product.stock === 'Low'
+              ? "https://schema.org/LimitedAvailability"
+              : "https://schema.org/OutOfStock",
+            "url": `https://ssaye.club/product/${product.id}`,
+            "seller": { "@type": "Organization", "name": "Ssaye Grocery Club" },
+          },
+          ...(product.rating > 0 && {
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": product.rating,
+              "reviewCount": product.reviews || 1,
+              "bestRating": 5,
+            },
+          }),
+        })}</script>
+      </Helmet>
       {/* ── Top bar ── */}
       <div className="pdp-topbar">
         <button className="pdp-back-btn" onClick={() => navigate('/marketplace')}>

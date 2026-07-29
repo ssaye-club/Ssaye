@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import Navbar from './components/Navbar';
@@ -26,6 +27,7 @@ import MarketplaceManager from './pages/MarketplaceManager';
 import VendorLogin    from './pages/VendorLogin';
 import VendorRegister from './pages/VendorRegister';
 import VendorDashboard from './pages/VendorDashboard';
+import MyOrders from './pages/MyOrders';
 import './App.css';
 
 const MARKETPLACE_PATHS = ['/marketplace', '/product'];
@@ -40,6 +42,7 @@ function BotRouter() {
 
 function App() {
   return (
+    <HelmetProvider>
     <AuthProvider>
       <ToastProvider>
         <Router>
@@ -67,6 +70,7 @@ function App() {
                 <Route path="/vendor/login"     element={<VendorLogin />} />
                 <Route path="/vendor/register"  element={<VendorRegister />} />
                 <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+                <Route path="/my-orders"        element={<MyOrders />} />
               </Routes>
             </main>
             <BotRouter />
@@ -75,6 +79,7 @@ function App() {
         </Router>
       </ToastProvider>
     </AuthProvider>
+    </HelmetProvider>
   );
 }
 

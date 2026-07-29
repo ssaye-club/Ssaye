@@ -33,9 +33,12 @@ const marketplaceOrderSchema = new mongoose.Schema({
     validate: [(v) => v.length > 0, 'Order must have at least one item'],
   },
 
-  subtotal:     { type: Number, required: true },
-  deliveryFee:  { type: Number, default: 0 },
-  total:        { type: Number, required: true },
+  subtotal:        { type: Number, required: true },
+  deliveryFee:     { type: Number, default: 0 },
+  couponCode:      { type: String, default: null },
+  couponDiscount:  { type: Number, default: 0 },
+  premiumDiscount: { type: Number, default: 0 },
+  total:           { type: Number, required: true },
 
   status: {
     type: String,

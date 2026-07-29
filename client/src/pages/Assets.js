@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import './Assets.css';
 import digitalAssetImage from '../images/crypto.webp';
 import residentialImage from '../images/residential-real-estate.avif';
@@ -16,6 +17,14 @@ function Assets() {
 
   return (
     <div className="assets-page">
+      <Helmet>
+        <title>Investment Assets — Ssaye Club</title>
+        <meta name="description" content="Explore real estate, digital assets, and alternative investment opportunities with Ssaye Club. Build a diversified portfolio with expert guidance." />
+        <meta property="og:title" content="Investment Assets — Ssaye Club" />
+        <meta property="og:description" content="Real estate, digital assets and alternative investments through Ssaye Club's premium investment platform." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://ssaye.club/assets" />
+      </Helmet>
       {/* Hero Section */}
       <section className="assets-hero-section">
         <div className="assets-hero-content">

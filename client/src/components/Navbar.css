@@ -31,6 +31,7 @@
   gap: 15px;
   text-decoration: none;
   transition: transform 0.3s ease;
+  flex-shrink: 0;
 }
 
 .navbar-logo:hover {
@@ -63,10 +64,13 @@
 .navbar-menu {
   display: flex;
   list-style: none;
-  gap: 2.5rem;
+  gap: clamp(1rem, 2vw, 2.5rem);
   align-items: center;
   margin: 0;
   padding: 0;
+  flex-wrap: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .navbar-item {
@@ -142,6 +146,14 @@
   background: #5a6fd6;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Premium star */
+.user-premium-star {
+  color: #f59e0b;
+  font-size: 1rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.6));
 }
 
 /* User Menu */

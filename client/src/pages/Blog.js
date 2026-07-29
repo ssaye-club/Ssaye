@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { AuthContext } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import './Blog.css';
@@ -114,6 +115,14 @@ function Blog() {
 
   return (
     <div className="blog-page">
+      <Helmet>
+        <title>Blog — Ssaye Club</title>
+        <meta name="description" content="Insights on real estate investing, South Asian food culture, sustainable living, smart city trends and community stories from the Ssaye Club team." />
+        <meta property="og:title" content="Blog — Ssaye Club" />
+        <meta property="og:description" content="Insights on investing, food, sustainable living and smart city trends from the Ssaye Club team." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://ssaye.club/blog" />
+      </Helmet>
       {/* Hero Section */}
       <section className="blog-hero-section">
         <div className="blog-hero-content">
