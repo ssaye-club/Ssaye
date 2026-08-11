@@ -17,116 +17,131 @@ function Farms() {
         <meta property="og:type" content="website" />
         <link rel="canonical" href="https://ssaye.club/farms" />
       </Helmet>
-      {/* Hero Section */}
-      <section className="farms-hero-section">
-        <div className="farms-hero-content">
-          <h1 className="farms-hero-title">SSAYE Farms</h1>
-          <p className="farms-hero-subtitle">Innovative Agricultural Solutions for Sustainable Living</p>
-        </div>
-      </section>
 
-      {/* Introduction Section */}
-      <section className="farms-intro-section">
-        <div className="container">
-          <div className="intro-layout">
-            <div className="intro-content">
-              <h2 className="section-title">Revolutionizing Urban Agriculture</h2>
-              <p className="section-description">
-                SSAYE Farms brings cutting-edge agricultural technology to urban environments, making fresh, 
-                sustainable farming accessible to everyone. Our innovative solutions combine hydroponics, 
-                vertical farming, and microgreens cultivation to create efficient, eco-friendly food production systems.
-              </p>
-              <p className="section-description">
-                Whether you're looking to set up your own micro-farm, participate in our community farms, 
-                or host memorable events surrounded by nature, SSAYE Farms offers the perfect solution for 
-                modern sustainable living.
-              </p>
+      {/* Hero */}
+      <section className="farms-hero">
+        <div className="farms-hero-inner">
+          <div className="farms-hero-text">
+            <div className="farms-hero-eyebrow">
+              <span className="farms-leaf-icon">🌿</span> SSAYE FARMS
+              <span className="farms-hero-tagline-small">Growing a Greener Tomorrow</span>
             </div>
-            <div className="intro-image">
-              <img src={roboticFarmImage} alt="Robotic Farm Technology" />
+            <h1 className="farms-hero-title">
+              FROM URBAN SPACES<br />
+              TO A <span className="farms-hero-accent">GREENER FUTURE</span>
+            </h1>
+            <p className="farms-hero-desc">
+              SSAYE Farms is redefining how cities grow. Through innovative technology
+              and sustainable practices, we bring fresh, healthy, and local produce closer to you.
+            </p>
+            <div className="farms-hero-pillars">
+              <div className="farms-pillar"><span>💧</span><span>Use Less<br/>Water</span></div>
+              <div className="farms-pillar"><span>🥗</span><span>Eat Better<br/>Live Healthier</span></div>
+              <div className="farms-pillar"><span>🌍</span><span>Reduce<br/>Carbon</span></div>
+              <div className="farms-pillar"><span>🤝</span><span>Build Stronger<br/>Communities</span></div>
             </div>
+          </div>
+          <div className="farms-hero-image-wrap">
+            <img src={roboticFarmImage} alt="Ssaye urban farm" className="farms-hero-img" />
           </div>
         </div>
       </section>
 
-      {/* Farming Solutions Section */}
-      <section className="farming-solutions-section">
-        <div className="container">
-          <h2 className="section-title">Our Farming Solutions</h2>
-          <p className="section-description">Explore our innovative agricultural technologies</p>
-          
-          <div className="solutions-grid">
-            {/* Hydroponics */}
-            <div className="solution-card">
-              <div className="solution-image">
-                <img src={hydroponicsImage} alt="Hydroponic Farming System" />
-                <div className="solution-image-overlay"></div>
+      {/* Stats bar */}
+      <section className="farms-stats-bar">
+        <div className="farms-stat-item">
+          <span className="farms-stat-num">90%</span>
+          <span className="farms-stat-label">Less Water Used</span>
+        </div>
+        <div className="farms-stat-divider" />
+        <div className="farms-stat-item">
+          <span className="farms-stat-num">365</span>
+          <span className="farms-stat-label">Days of Growing</span>
+        </div>
+        <div className="farms-stat-divider" />
+        <div className="farms-stat-item">
+          <span className="farms-stat-num">10x</span>
+          <span className="farms-stat-label">Higher Yield</span>
+        </div>
+        <div className="farms-stat-divider" />
+        <div className="farms-stat-item">
+          <span className="farms-stat-num">100%</span>
+          <span className="farms-stat-label">Pesticide Free</span>
+        </div>
+      </section>
+
+      {/* Tagline band */}
+      <div className="farms-tagline-band">
+        <span className="farms-script">Small Farms.</span>
+        <span className="farms-script">Big Difference.</span>
+        <span className="farms-leaf-deco">🌱</span>
+      </div>
+
+      {/* Farming Solutions */}
+      <section className="farms-solutions">
+        <div className="farms-container">
+          <div className="farms-section-header">
+            <h2 className="farms-section-title">Our Farming Solutions</h2>
+            <span className="farms-section-arrow">←</span>
+          </div>
+
+          <div className="farms-solutions-grid">
+            <div className="farms-solution-card">
+              <div className="farms-solution-img-wrap">
+                <img src={hydroponicsImage} alt="Hydroponic Farming" />
+                <div className="farms-solution-label">
+                  <span className="farms-solution-icon">🌿</span>
+                  <span>HYDROPONIC SYSTEMS</span>
+                </div>
               </div>
-              <div className="solution-content">
-                <h3>Hydroponics Systems</h3>
-                <p className="solution-tagline">Soil-Free, Water-Efficient Farming</p>
-                <p className="solution-description">
-                  Our advanced hydroponic systems allow plants to grow in nutrient-rich water solutions, 
-                  using up to 90% less water than traditional farming. Perfect for growing fresh vegetables, 
-                  herbs, and leafy greens year-round in any environment.
-                </p>
-                <ul className="solution-features">
-                  <li>✓ 90% less water consumption</li>
-                  <li>✓ Faster growth rates (up to 30%)</li>
-                  <li>✓ Year-round production</li>
-                  <li>✓ No soil-borne diseases</li>
-                  <li>✓ Space-efficient vertical systems</li>
-                  <li>✓ Automated nutrient delivery</li>
+              <div className="farms-solution-body">
+                <p className="farms-solution-tagline">Soil-free. Water-efficient.<br/>Grow more with less. All year round.</p>
+                <ul className="farms-check-list">
+                  <li>90% less water</li>
+                  <li>Faster growth (up to 30%)</li>
+                  <li>No soil-borne diseases</li>
+                  <li>Automated nutrient delivery</li>
+                  <li>Space-efficient systems</li>
                 </ul>
               </div>
             </div>
 
-            {/* Urban Agriculture */}
-            <div className="solution-card">
-              <div className="solution-image">
+            <div className="farms-solution-card">
+              <div className="farms-solution-img-wrap">
                 <img src={urbanAgricultureImage} alt="Urban Agriculture" />
-                <div className="solution-image-overlay"></div>
+                <div className="farms-solution-label">
+                  <span className="farms-solution-icon">🏙️</span>
+                  <span>URBAN AGRICULTURE</span>
+                </div>
               </div>
-              <div className="solution-content">
-                <h3>Urban Agriculture</h3>
-                <p className="solution-tagline">Bringing Farms to the City</p>
-                <p className="solution-description">
-                  Transform unused urban spaces into productive green areas. Our urban agriculture solutions 
-                  include rooftop gardens, vertical farms, and community growing spaces that bring fresh, 
-                  local produce directly to city dwellers while improving air quality and community well-being.
-                </p>
-                <ul className="solution-features">
-                  <li>✓ Rooftop garden installations</li>
-                  <li>✓ Vertical farming systems</li>
-                  <li>✓ Community garden programs</li>
-                  <li>✓ Educational workshops</li>
-                  <li>✓ Fresh local produce</li>
-                  <li>✓ Reduced carbon footprint</li>
+              <div className="farms-solution-body">
+                <p className="farms-solution-tagline">Turning rooftops and city spaces into productive green zones.</p>
+                <ul className="farms-check-list">
+                  <li>Rooftop & vertical farms</li>
+                  <li>Community gardens</li>
+                  <li>Fresh local produce</li>
+                  <li>Workshops & education</li>
+                  <li>Greener cities, healthier lives</li>
                 </ul>
               </div>
             </div>
 
-            {/* Microgreens */}
-            <div className="solution-card">
-              <div className="solution-image">
+            <div className="farms-solution-card">
+              <div className="farms-solution-img-wrap">
                 <img src={microgreensImage} alt="Microgreens Cultivation" />
-                <div className="solution-image-overlay"></div>
+                <div className="farms-solution-label">
+                  <span className="farms-solution-icon">🌱</span>
+                  <span>MICROGREENS CULTIVATION</span>
+                </div>
               </div>
-              <div className="solution-content">
-                <h3>Microgreens Production</h3>
-                <p className="solution-tagline">Nutrient-Dense Superfoods</p>
-                <p className="solution-description">
-                  Grow nutrient-packed microgreens with our specialized cultivation systems. These tiny 
-                  powerhouses contain up to 40 times more nutrients than their mature counterparts and 
-                  can be harvested in just 7-14 days, providing a quick, profitable, and healthy farming option.
-                </p>
-                <ul className="solution-features">
-                  <li>✓ 7-14 day harvest cycle</li>
-                  <li>✓ 40x more nutrients than mature plants</li>
-                  <li>✓ Minimal space required</li>
-                  <li>✓ High-profit margins</li>
-                  <li>✓ Easy to grow indoors</li>
-                  <li>✓ Year-round production</li>
+              <div className="farms-solution-body">
+                <p className="farms-solution-tagline">Tiny greens.<br/>Massive nutrition.<br/>Big impact.</p>
+                <ul className="farms-check-list">
+                  <li>7–14 day harvest cycle</li>
+                  <li>40x more nutrients</li>
+                  <li>Minimal space required</li>
+                  <li>High-profit potential</li>
+                  <li>Easy to grow indoors</li>
                 </ul>
               </div>
             </div>
@@ -134,153 +149,98 @@ function Farms() {
         </div>
       </section>
 
-      {/* Services Section */}
-      <section className="farms-services-section">
-        <div className="container">
-          <h2 className="section-title">Our Services</h2>
-          <p className="section-description">Comprehensive solutions for every farming need</p>
-          
-          <div className="services-grid">
-            <div className="service-detail-card">
-              <div className="service-number">01</div>
+      {/* Services */}
+      <section className="farms-services">
+        <div className="farms-container">
+          <div className="farms-section-header">
+            <h2 className="farms-section-title">Our Services</h2>
+            <span className="farms-leaf-deco">🌿</span>
+          </div>
+
+          <div className="farms-services-grid">
+            <div className="farms-service-card">
+              <div className="farms-service-num">01</div>
               <h3>Micro-Farm Setup</h3>
-              <p className="service-intro">
-                We help you establish your own micro-farm with complete end-to-end solutions
-              </p>
-              <ul className="service-features">
-                <li><strong>Custom Design:</strong> Tailored systems for your space and needs</li>
-                <li><strong>Equipment Installation:</strong> Professional setup of all growing systems</li>
-                <li><strong>Training & Support:</strong> Comprehensive training on farm management</li>
-                <li><strong>Ongoing Maintenance:</strong> Regular check-ups and technical support</li>
-                <li><strong>Crop Planning:</strong> Guidance on what to grow for maximum yield</li>
-                <li><strong>Market Connection:</strong> Help connecting with local markets and buyers</li>
+              <ul className="farms-check-list">
+                <li>Custom design for your space</li>
+                <li>Professional installation</li>
+                <li>Training & ongoing support</li>
+                <li>Crop planning & guidance</li>
+                <li>Market connection</li>
               </ul>
             </div>
 
-            <div className="service-detail-card">
-              <div className="service-number">02</div>
+            <div className="farms-service-card">
+              <div className="farms-service-num">02</div>
               <h3>Farm Participation Program</h3>
-              <p className="service-intro">
-                Join our community farms and enjoy fresh produce without the full responsibility
-              </p>
-              <ul className="service-features">
-                <li><strong>Shared Farming:</strong> Co-own sections of our community farms</li>
-                <li><strong>Weekly Harvest:</strong> Regular supply of fresh organic produce</li>
-                <li><strong>Learn & Grow:</strong> Hands-on farming workshops and classes</li>
-                <li><strong>Community Network:</strong> Connect with like-minded individuals</li>
-                <li><strong>Flexible Plans:</strong> Monthly or annual participation options</li>
-                <li><strong>Farm Visits:</strong> Unlimited access to visit your farm plot</li>
+              <ul className="farms-check-list">
+                <li>Join our community farms</li>
+                <li>Weekly fresh harvest</li>
+                <li>Learn & grow with experts</li>
+                <li>Flexible monthly or annual plans</li>
+                <li>Unlimited farm visits</li>
               </ul>
             </div>
 
-            <div className="service-detail-card">
-              <div className="service-number">03</div>
+            <div className="farms-service-card">
+              <div className="farms-service-num">03</div>
               <h3>Events & Experiences</h3>
-              <p className="service-intro">
-                Host unforgettable events in our beautiful farm settings
-              </p>
-              <ul className="service-features">
-                <li><strong>Corporate Events:</strong> Team-building and company retreats</li>
-                <li><strong>Family Gatherings:</strong> Birthday parties and family reunions</li>
-                <li><strong>Educational Tours:</strong> School trips and learning experiences</li>
-                <li><strong>Farm-to-Table Events:</strong> Dining experiences with fresh produce</li>
-                <li><strong>Workshops:</strong> Gardening, cooking, and sustainability sessions</li>
-                <li><strong>Custom Packages:</strong> Tailored events for your specific needs</li>
+              <ul className="farms-check-list">
+                <li>Corporate events & retreats</li>
+                <li>Family gatherings & parties</li>
+                <li>Educational tours & workshops</li>
+                <li>Farm-to-table experiences</li>
+                <li>Custom packages available</li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="farms-benefits-section">
-        <div className="container">
-          <h2 className="section-title">Why Choose SSAYE Farms?</h2>
-          
-          <div className="benefits-grid">
-            <div className="benefit-item">
-              <div className="benefit-icon-wrapper">
-                <div className="benefit-number">01</div>
-              </div>
-              <h3>Sustainable & Eco-Friendly</h3>
-              <p>Our farming methods use minimal water, no harmful pesticides, and significantly reduce carbon emissions compared to traditional agriculture.</p>
+      {/* What Makes Us Different */}
+      <section className="farms-differentiators">
+        <div className="farms-container">
+          <h2 className="farms-diff-heading">WHAT MAKES US DIFFERENT</h2>
+          <div className="farms-diff-grid">
+            <div className="farms-diff-item">
+              <div className="farms-diff-icon">♻️</div>
+              <h4>Sustainable &amp; Eco-Friendly</h4>
+              <p>Low water usage, no harmful chemicals, better for our planet.</p>
             </div>
-
-            <div className="benefit-item">
-              <div className="benefit-icon-wrapper">
-                <div className="benefit-number">02</div>
-              </div>
-              <h3>Fresh & Nutritious</h3>
-              <p>Harvest-to-table freshness ensures maximum nutrient retention. Our produce is never more than a day old when it reaches you.</p>
+            <div className="farms-diff-item">
+              <div className="farms-diff-icon">📡</div>
+              <h4>Advanced Technology</h4>
+              <p>Smart systems, IoT monitoring &amp; data-driven growth.</p>
             </div>
-
-            <div className="benefit-item">
-              <div className="benefit-icon-wrapper">
-                <div className="benefit-number">03</div>
-              </div>
-              <h3>Year-Round Production</h3>
-              <p>Controlled environment systems allow continuous growing regardless of season or weather conditions.</p>
+            <div className="farms-diff-item">
+              <div className="farms-diff-icon">🥦</div>
+              <h4>Fresh &amp; Nutritious</h4>
+              <p>Harvest-to-table freshness. Packed with nutrients.</p>
             </div>
-
-            <div className="benefit-item">
-              <div className="benefit-icon-wrapper">
-                <div className="benefit-number">04</div>
-              </div>
-              <h3>Space Efficient</h3>
-              <p>Vertical farming and hydroponic systems produce up to 10x more yield per square foot than traditional farming, making it perfect for urban environments and maximizing productivity in limited spaces.</p>
-            </div>
-
-            <div className="benefit-item">
-              <div className="benefit-icon-wrapper">
-                <div className="benefit-number">05</div>
-              </div>
-              <h3>Educational & Community</h3>
-              <p>Learn about sustainable agriculture and food systems through hands-on experiences while connecting with neighbors and building a strong community around sustainable living.</p>
-            </div>
-
-            <div className="benefit-item">
-              <div className="benefit-icon-wrapper">
-                <div className="benefit-number">06</div>
-              </div>
-              <h3>Advanced Robotics</h3>
-              <p>Integrated robotics and IoT systems automate monitoring, optimize growing conditions, and maximize efficiency with smart sensors and AI-driven crop management.</p>
+            <div className="farms-diff-item">
+              <div className="farms-diff-icon">🤝</div>
+              <h4>Community Focused</h4>
+              <p>Empowering people to grow together and thrive.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="farms-stats-section">
-        <div className="container">
-          <div className="stats-grid">
-            <div className="farm-stat-card">
-              <div className="farm-stat-number">90%</div>
-              <div className="farm-stat-label">Less Water Used</div>
-            </div>
-            <div className="farm-stat-card">
-              <div className="farm-stat-number">365</div>
-              <div className="farm-stat-label">Days of Growing</div>
-            </div>
-            <div className="farm-stat-card">
-              <div className="farm-stat-number">10x</div>
-              <div className="farm-stat-label">Higher Yield</div>
-            </div>
-            <div className="farm-stat-card">
-              <div className="farm-stat-number">100%</div>
-              <div className="farm-stat-label">Pesticide Free</div>
-            </div>
-          </div>
+      {/* CTA */}
+      <section className="farms-cta">
+        <div className="farms-cta-left">
+          <p className="farms-cta-script">Real Food.<br/>Real Change.<br/>Real Future.</p>
         </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="farms-cta-section">
-        <div className="container">
-          <h2>Ready to Start Your Farming Journey?</h2>
-          <p>Join SSAYE Farms and experience the future of sustainable agriculture</p>
-          <div className="cta-buttons">
-            <button className="btn-primary">Setup Your Micro-Farm</button>
-            <button className="btn-secondary">Join Community Farm</button>
+        <div className="farms-cta-center">
+          <h2 className="farms-cta-headline">EAT BETTER.<br/>LIVE BETTER.<br/><span className="farms-cta-accent">Grow Better.</span></h2>
+        </div>
+        <div className="farms-cta-right">
+          <p className="farms-cta-subhead">LET'S GROW TOGETHER!</p>
+          <p className="farms-cta-contact">🌐 www.ssaye.club</p>
+          <p className="farms-cta-contact">✉️ contact@ssaye.club</p>
+          <div className="farms-cta-buttons">
+            <button className="farms-btn-primary">Setup Your Micro-Farm</button>
+            <button className="farms-btn-secondary">Join Community Farm</button>
           </div>
         </div>
       </section>
