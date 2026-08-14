@@ -10,7 +10,9 @@ function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [livingOpen, setLivingOpen] = useState(false);
+  const [farmsOpen, setFarmsOpen] = useState(false);
   const livingRef = useRef(null);
+  const farmsRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useContext(AuthContext);
@@ -65,6 +67,9 @@ function Navbar() {
     const handleClickOutside = (e) => {
       if (livingRef.current && !livingRef.current.contains(e.target)) {
         setLivingOpen(false);
+      }
+      if (farmsRef.current && !farmsRef.current.contains(e.target)) {
+        setFarmsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -164,19 +169,7 @@ function Navbar() {
               </li>
               <li className="navbar-item">
                 <Link
-                  to="/farms"
-                  className={`navbar-link ${isActive('/farms') ? 'active' : ''}`}
-                  onClick={closeMobileMenu}
-                >
-                  <span>Farms</span>
-                  <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 18l6-6-6-6"/>
-                  </svg>
-                </Link>
-              </li>
-              <li className="navbar-item">
-                <Link 
-                  to="/blog" 
+                  to="/blog"
                   className={`navbar-link ${isActive('/blog') ? 'active' : ''}`}
                   onClick={closeMobileMenu}
                 >
@@ -188,6 +181,44 @@ function Navbar() {
               </li>
             </>
           )}
+          <li className="navbar-item navbar-item--has-dropdown" ref={farmsRef}>
+            <button
+              className={`navbar-link navbar-link--dropdown-trigger ${isActive('/farms') || isActive('/farms/events') ? 'active' : ''}`}
+              onClick={() => setFarmsOpen(!farmsOpen)}
+              aria-haspopup="true"
+              aria-expanded={farmsOpen}
+            >
+              <span>Farms</span>
+              <svg className={`nav-chevron ${farmsOpen ? 'nav-chevron--open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+              <svg className="mobile-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </button>
+            {farmsOpen && (
+              <ul className="nav-dropdown">
+                <li>
+                  <Link
+                    to="/farms"
+                    className={`nav-dropdown-item ${isActive('/farms') ? 'nav-dropdown-item--active' : ''}`}
+                    onClick={() => { setFarmsOpen(false); closeMobileMenu(); }}
+                  >
+                    <span>Overview</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/farms/events"
+                    className={`nav-dropdown-item ${isActive('/farms/events') ? 'nav-dropdown-item--active' : ''}`}
+                    onClick={() => { setFarmsOpen(false); closeMobileMenu(); }}
+                  >
+                    <span>Events</span>
+                  </Link>
+                </li>
+              </ul>
+            )}
+          </li>
           {isAuthenticated() && !user?.isAdmin && !user?.isSuperAdmin && (
             <li className="navbar-item">
               <Link 

@@ -12,6 +12,7 @@ import Home from './pages/Home';
 import Assets from './pages/Assets';
 import SmartCity from './pages/SmartCity';
 import Farms from './pages/Farms';
+import FarmEvents from './pages/FarmEvents';
 import Blog from './pages/Blog';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -57,6 +58,7 @@ function App() {
                 <Route path="/marketplace" element={<Marketplace />} />
                 <Route path="/product/:id" element={<ProductDetail />} />
                 <Route path="/farms" element={<Farms />} />
+                <Route path="/farms/events" element={<FarmEvents />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
